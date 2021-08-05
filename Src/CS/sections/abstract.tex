@@ -1,0 +1,25 @@
+\begin{abstract}
+\begin{comment}
+	Decision diagrams (DDs) can represent quantum states and circuits, and have proven a powerful method for simulation and synthesis.
+	We show that the class of stabilizer states can yield exponentially-sized DDs, despite their well-known tractability and importance.
+	To remedy this, we introduce a new DD structure, called Local Invertible Map-DD (\limdd), and provide manipulation operations for  supporting simulation and synthesis.
+	We prove that the set of poly-sized \limdd states strictly contains the union of stabilizer states and existing DD-based methods.
+	% use this iff we have zip states
+	%We also provide evidence that \limdd-based simulation is more efficient than this union.
+\end{comment}
+
+\vspace{-1.5em}
+Efficient methods for the representation of relevant quantum states and quantum operations are crucial for the simulation and optimization of quantum circuits.
+Decision diagrams (DDs), a well-studied data structure originally used to represent Boolean functions, have proven capable of capturing interesting aspects of quantum systems, but their limits are not well understood. 
+    In this work, we investigate and bridge the gap between existing DD-based structures and the stabilizer formalism, a well-studied method for simulating quantum circuits in the tractable regime.
+%	Decision diagrams (DDs) can represent quantum states and circuits, and have proven a powerful method for simulation and synthesis.
+%   We first show that decision diagrams require exponential size to describe certain stabilizer states, despite their reputation for concise representation of structured data.
+     We first show that although DDs were suggested to succinctly represent important quantum states,
+     they actually require exponential space for a subset of stabilizer states.
+	To remedy this, we introduce a more powerful decision diagram variant, called Local Invertible Map-DD (\limdd).
+	We prove that the set of quantum states represented by poly-sized \limdds strictly contains the union of stabilizer states and other decision diagram variants.
+    We also provide evidence that \limdd-based simulation is capable of efficiently simulating some circuits for which both stabilizer-based and other DD-based methods require exponential time.
+    % \todo{Tim: I rewrote after Vedran's comment, please check (Vedran: ``phrasing... do you mean that they can efficiently simulate more than the union of circuits that stab-based and conventional dd-based methods can efficiently simulate?''}
+	By uniting two successful approaches, \limdds thus pave the way for fundamentally more powerful solutions for simulation and analysis of quantum computing.
+\end{abstract}
+

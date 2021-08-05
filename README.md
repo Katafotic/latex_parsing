@@ -12,3 +12,7 @@ I think changing the layout for entering Latex commands slows down my work. To b
 But first, I need to analyze my work and make a list of these commands. 
 
 The purpose of this project is to search for these most used Latex commands based on the tex files, which I upload.
+
+-------------
+
+The ./Src directory contains several random choice prewrites of scientific articles taken from open-access archive [arXiv.org](https://arxiv.org/).

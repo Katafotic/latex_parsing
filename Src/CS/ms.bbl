@@ -1,0 +1,362 @@
+\begin{thebibliography}{10}
+
+\bibitem{LUKS1997335}
+Some algorithms for nilpotent permutation groups.
+\newblock {\em Journal of Symbolic Computation}, 23(4):335--354, 1997.
+\newblock URL:
+  \url{https://www.sciencedirect.com/science/article/pii/S0747717196900929},
+  \href {https://doi.org/https://doi.org/10.1006/jsco.1996.0092}
+  {\path{doi:https://doi.org/10.1006/jsco.1996.0092}}.
+
+\bibitem{githubrepo}
+Stabranksearcher: code for finding (upper bounds to) the stabilizer rank of a
+  quantum state.
+\newblock \url{https://github.com/timcp/StabRankSearcher}, 2021.
+
+\bibitem{aaronson2008improved}
+Scott Aaronson and Daniel Gottesman.
+\newblock Improved simulation of stabilizer circuits.
+\newblock {\em Physical Review A}, 70(5), nov 2004.
+\newblock URL: \url{https://doi.org/10.1103%2Fphysreva.70.052328}, \href
+  {https://doi.org/10.1103/physreva.70.052328}
+  {\path{doi:10.1103/physreva.70.052328}}.
+
+\bibitem{akers1978binary}
+Sheldon~B. Akers.
+\newblock Binary decision diagrams.
+\newblock {\em IEEE Computer Architecture Letters}, 27(06):509--516, 1978.
+
+\bibitem{andersen1997introduction}
+Henrik~Reif Andersen.
+\newblock An introduction to binary decision diagrams.
+\newblock {\em Lecture notes, available online, IT University of Copenhagen},
+  page~5, 1997.
+
+\bibitem{audenaert2005entanglement}
+Koenraad M~R Audenaert and Martin~B Plenio.
+\newblock Entanglement on mixed stabilizer states: normal forms and reduction
+  procedures.
+\newblock {\em New Journal of Physics}, 7(1):170, 2005.
+\newblock URL: \url{http://stacks.iop.org/1367-2630/7/i=1/a=170}.
+
+\bibitem{580054}
+R.~I. {Bahar}, E.~A. {Frohm}, C.~M. {Gaona}, G.~D. {Hachtel}, E.~{Macii},
+  A.~{Pardo}, and F.~{Somenzi}.
+\newblock Algebraic decision diagrams and their applications.
+\newblock In {\em Proceedings of 1993 International Conference on Computer
+  Aided Design (ICCAD)}, pages 188--191, 1993.
+
+\bibitem{bennett1996concentrating}
+Charles~H Bennett, Herbert~J Bernstein, Sandu Popescu, and Benjamin Schumacher.
+\newblock Concentrating partial entanglement by local operations.
+\newblock {\em Physical Review A}, 53(4):2046, 1996.
+
+\bibitem{brace1990efficient}
+Karl~S Brace, Richard~L Rudell, and Randal~E Bryant.
+\newblock Efficient implementation of a bdd package.
+\newblock In {\em 27th ACM/IEEE design automation conference}, pages 40--45.
+  IEEE, 1990.
+
+\bibitem{bravyi2019simulation}
+Sergey Bravyi, Dan Browne, Padraic Calpin, Earl Campbell, David Gosset, and
+  Mark Howard.
+\newblock Simulation of quantum circuits by low-rank stabilizer decompositions.
+\newblock {\em {Quantum}}, 3:181, September 2019.
+\newblock \href {https://doi.org/10.22331/q-2019-09-02-181}
+  {\path{doi:10.22331/q-2019-09-02-181}}.
+
+\bibitem{bravyi2017improved}
+Sergey Bravyi and David Gosset.
+\newblock Improved classical simulation of quantum circuits dominated by
+  clifford gates.
+\newblock {\em Phys. Rev. Lett.}, 116:250501, Jun 2016.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevLett.116.250501},
+  \href {https://doi.org/10.1103/PhysRevLett.116.250501}
+  {\path{doi:10.1103/PhysRevLett.116.250501}}.
+
+\bibitem{bravyi2005universal}
+Sergey Bravyi and Alexei Kitaev.
+\newblock Universal quantum computation with ideal clifford gates and noisy
+  ancillas.
+\newblock {\em Phys. Rev. A}, 71:022316, Feb 2005.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevA.71.022316}, \href
+  {https://doi.org/10.1103/PhysRevA.71.022316}
+  {\path{doi:10.1103/PhysRevA.71.022316}}.
+
+\bibitem{bravyi2016trading}
+Sergey Bravyi, Graeme Smith, and John~A. Smolin.
+\newblock Trading classical and quantum computational resources.
+\newblock {\em Phys. Rev. X}, 6:021043, Jun 2016.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevX.6.021043}, \href
+  {https://doi.org/10.1103/PhysRevX.6.021043}
+  {\path{doi:10.1103/PhysRevX.6.021043}}.
+
+\bibitem{briegel2000persistent}
+Hans~J. Briegel and Robert Raussendorf.
+\newblock Persistent entanglement in arrays of interacting particles.
+\newblock {\em Phys. Rev. Lett.}, 86:910--913, Jan 2001.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevLett.86.910}, \href
+  {https://doi.org/10.1103/PhysRevLett.86.910}
+  {\path{doi:10.1103/PhysRevLett.86.910}}.
+
+\bibitem{bryant86}
+Randal~E. Bryant.
+\newblock Graph-based algorithms for {B}oolean function manipulation.
+\newblock {\em IEEE Trans. Computers}, 35(8):677--691, 1986.
+
+\bibitem{bryant1995verification}
+Yirng-An Chen Randal~E Bryant.
+\newblock Verification of arithmetic circuits with binary moment diagrams.
+\newblock In {\em 32nd Design Automation Conference}, pages 535--541. IEEE,
+  1995.
+
+\bibitem{calpin2020exploring}
+Padraic Calpin.
+\newblock {\em Exploring Quantum Computation Through the Lens of Classical
+  Simulation}.
+\newblock PhD thesis, UCL (University College London), 2020.
+
+\bibitem{chaki2018bdd}
+Sagar Chaki and Arie Gurfinkel.
+\newblock Bdd-based symbolic model checking.
+\newblock In {\em Handbook of Model Checking}, pages 219--245. Springer, 2018.
+
+\bibitem{chitambar2014everything}
+Eric Chitambar, Debbie Leung, Laura Man{\v{c}}inska, Maris Ozols, and Andreas
+  Winter.
+\newblock Everything you always wanted to know about locc (but were afraid to
+  ask).
+\newblock {\em Communications in Mathematical Physics}, 328(1):303--326, 2014.
+
+\bibitem{10.1145/157485.164569}
+E.~M. Clarke, K.~L. McMillan, X~Zhao, M.~Fujita, and J.~Yang.
+\newblock Spectral transforms for large boolean functions with applications to
+  technology mapping.
+\newblock In {\em Proceedings of the 30th International Design Automation
+  Conference}, DAC '93, page 54?60, New York, NY, USA, 1993. Association for
+  Computing Machinery.
+\newblock \href {https://doi.org/10.1145/157485.164569}
+  {\path{doi:10.1145/157485.164569}}.
+
+\bibitem{darwiche2002knowledge}
+Adnan Darwiche and Pierre Marquis.
+\newblock A knowledge compilation map.
+\newblock {\em Journal of Artificial Intelligence Research}, 17:229--264, 2002.
+
+\bibitem{dur2000three}
+Wolfgang D{\"u}r, Guifre Vidal, and J~Ignacio Cirac.
+\newblock Three qubits can be entangled in two inequivalent ways.
+\newblock {\em Physical Review A}, 62(6):062314, 2000.
+
+\bibitem{vdurivs2004multi}
+Pavol {\v{D}}uri{\v{s}}, Juraj Hromkovi{\v{c}}, Stasys Jukna, Martin Sauerhoff,
+  and Georg Schnitger.
+\newblock On multi-partition communication complexity.
+\newblock {\em Information and computation}, 194(1):49--75, 2004.
+
+\bibitem{englbrecht2020symmetries}
+Matthias Englbrecht and Barbara Kraus.
+\newblock Symmetries and entanglement of stabilizer states.
+\newblock {\em Phys. Rev. A}, 101:062302, Jun 2020.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevA.101.062302},
+  \href {https://doi.org/10.1103/PhysRevA.101.062302}
+  {\path{doi:10.1103/PhysRevA.101.062302}}.
+
+\bibitem{fargier2014knowledge}
+H{\'e}lene Fargier, Pierre Marquis, Alexandre Niveau, and Nicolas Schmidt.
+\newblock A knowledge compilation map for ordered real-valued decision
+  diagrams.
+\newblock In {\em Proceedings of the AAAI Conference on Artificial
+  Intelligence}, volume~28, 2014.
+
+\bibitem{feinstein2011skipped}
+David~Y Feinstein and Mitchell~A Thornton.
+\newblock On the skipped variables of quantum multiple-valued decision
+  diagrams.
+\newblock In {\em 2011 41st IEEE International Symposium on Multiple-Valued
+  Logic}, pages 164--169. IEEE, 2011.
+
+\bibitem{fujita1997multi}
+Masahiro Fujita, Patrick~C. McGeer, and JC-Y Yang.
+\newblock Multi-terminal binary decision diagrams: An efficient data structure
+  for matrix representation.
+\newblock {\em Formal methods in system design}, 10(2-3):149--169, 1997.
+
+\bibitem{garcia2012efficient}
+Hector~J Garcia, Igor~L Markov, and Andrew~W Cross.
+\newblock Efficient inner-product algorithm for stabilizer states.
+\newblock {\em arXiv preprint arXiv:1210.6646}, 2012.
+
+\bibitem{gottesman1997stabilizer}
+Daniel Gottesman.
+\newblock Stabilizer codes and quantum error correction.
+\newblock {\em arXiv:quant-ph/9705052}, 1997.
+
+\bibitem{gottesman1998heisenberg}
+Daniel Gottesman.
+\newblock The {H}eisenberg representation of quantum computers.
+\newblock {\em arXiv:quant-ph/9807006v1}, 1998.
+
+\bibitem{hebenstreit2020computational}
+Martin Hebenstreit, Richard Jozsa, Barbara Kraus, and Sergii Strelchuk.
+\newblock Computational power of matchgates with supplementary resources.
+\newblock {\em Physical Review A}, 102(5):052604, 2020.
+
+\bibitem{hein2006entanglement}
+Marc Hein, Wolfgang D{\"u}r, Jens Eisert, Robert Raussendorf, M~Nest, and H-J
+  Briegel.
+\newblock Entanglement in graph states and its applications.
+\newblock {\em arXiv:0602096}, 2006.
+
+\bibitem{huang2019approximate}
+Yifei Huang and Peter Love.
+\newblock Approximate stabilizer rank and improved weak simulation of
+  clifford-dominated circuits for qudits.
+\newblock {\em Phys. Rev. A}, 99:052307, May 2019.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevA.99.052307}, \href
+  {https://doi.org/10.1103/PhysRevA.99.052307}
+  {\path{doi:10.1103/PhysRevA.99.052307}}.
+
+\bibitem{jozsa2008matchgates}
+Richard Jozsa and Akimasa Miyake.
+\newblock Matchgates and classical simulation of quantum circuits.
+\newblock {\em Proceedings: Mathematical, Physical and Engineering Sciences},
+  pages 3089--3106, 2008.
+
+\bibitem{kocia2018stationary}
+Lucas Kocia and Peter Love.
+\newblock Stationary phase method in discrete wigner functions and classical
+  simulation of quantum circuits.
+\newblock {\em arXiv:1810.03622}, 2018.
+
+\bibitem{kocia2020improved}
+Lucas Kocia and Mohan Sarovar.
+\newblock Improved simulation of quantum circuits by fewer gaussian
+  eliminations.
+\newblock {\em arXiv:2003.01130}, 2020.
+
+\bibitem{lipton1979generalized}
+Richard~J Lipton, Donald~J Rose, and Robert~Endre Tarjan.
+\newblock Generalized nested dissection.
+\newblock {\em SIAM journal on numerical analysis}, 16(2):346--358, 1979.
+
+\bibitem{mcmillan}
+K.L. McMillan.
+\newblock {\em Symbolic model checking: an approach to the state explosion
+  problem}.
+\newblock PhD thesis, 1992.
+\newblock UMI No. \hbox{GAX92-24209}.
+
+\bibitem{miller2006qmdd}
+D~Michael Miller and Mitchell~A Thornton.
+\newblock {Q}{M}{D}{D}: {A} decision diagram structure for reversible and
+  quantum circuits.
+\newblock In {\em 36th International Symposium on Multiple-Valued Logic
+  (ISMVL'06)}, pages 30--30. IEEE, 2006.
+
+\bibitem{orus2014practical}
+Román Orús.
+\newblock A practical introduction to tensor networks: Matrix product states
+  and projected entangled pair states.
+\newblock {\em Annals of Physics}, 349:117--158, 2014.
+\newblock URL:
+  \url{https://www.sciencedirect.com/science/article/pii/S0003491614001596},
+  \href {https://doi.org/https://doi.org/10.1016/j.aop.2014.06.013}
+  {\path{doi:https://doi.org/10.1016/j.aop.2014.06.013}}.
+
+\bibitem{preskill2018quantum}
+John Preskill.
+\newblock {Q}uantum {C}omputing in the {N}{I}{S}{Q} era and beyond.
+\newblock {\em Quantum}, 2:79, 2018.
+
+\bibitem{raussendorf2001oneway}
+Robert Raussendorf and Hans~J. Briegel.
+\newblock A one-way quantum computer.
+\newblock {\em Phys. Rev. Lett.}, 86:5188--5191, May 2001.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevLett.86.5188},
+  \href {https://doi.org/10.1103/PhysRevLett.86.5188}
+  {\path{doi:10.1103/PhysRevLett.86.5188}}.
+
+\bibitem{rudell1993dynamic}
+Richard Rudell.
+\newblock Dynamic variable ordering for ordered binary decision diagrams.
+\newblock In {\em Proceedings of 1993 International Conference on Computer
+  Aided Design (ICCAD)}, pages 42--47. IEEE, 1993.
+
+\bibitem{sanner}
+Scott Sanner and David McAllester.
+\newblock Affine algebraic decision diagrams (aadds) and their application to
+  structured probabilistic inference.
+\newblock In {\em Proceedings of the 19th International Joint Conference on
+  Artificial Intelligence}, IJCAI'05, pages 1384--1390, San Francisco, CA, USA,
+  2005. Morgan Kaufmann Publishers Inc.
+
+\bibitem{terhal2001classical}
+Barbara~M. Terhal and David~P. DiVincenzo.
+\newblock Classical simulation of noninteracting-fermion quantum circuits.
+\newblock {\em Phys. Rev. A}, 65:032325, Mar 2002.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevA.65.032325}, \href
+  {https://doi.org/10.1103/PhysRevA.65.032325}
+  {\path{doi:10.1103/PhysRevA.65.032325}}.
+
+\bibitem{berg2020circuit}
+Ewout van~den Berg and Kristan Temme.
+\newblock Circuit optimization of hamiltonian simulation by simultaneous
+  diagonalization of pauli clusters.
+\newblock {\em Quantum}, 4:322, 2020.
+
+\bibitem{nest2004graphical}
+Maarten Van~den Nest, Jeroen Dehaene, and Bart De~Moor.
+\newblock Graphical description of the action of local clifford transformations
+  on graph states.
+\newblock {\em Physical Review A}, 69(2):022316, 2004.
+
+\bibitem{nest2005local}
+Maarten Van~den Nest, Jeroen Dehaene, and Bart De~Moor.
+\newblock Local unitary versus local clifford equivalence of stabilizer states.
+\newblock {\em Phys. Rev. A}, 71:062323, Jun 2005.
+\newblock URL: \url{https://link.aps.org/doi/10.1103/PhysRevA.71.062323}, \href
+  {https://doi.org/10.1103/PhysRevA.71.062323}
+  {\path{doi:10.1103/PhysRevA.71.062323}}.
+
+\bibitem{viamontes2003improving}
+George~F Viamontes, Igor~L Markov, and John~P Hayes.
+\newblock Improving gate-level simulation of quantum circuits.
+\newblock {\em Quantum Information Processing}, 2(5):347--380, 2003.
+
+\bibitem{viamontes2004high}
+George~F Viamontes, Igor~L Markov, and John~P Hayes.
+\newblock High-performance quidd-based simulation of quantum circuits.
+\newblock In {\em Proceedings Design, Automation and Test in Europe Conference
+  and Exhibition}, volume~2, pages 1354--1355. IEEE, 2004.
+
+\bibitem{viamontes2009quantum}
+George~F Viamontes, Igor~L Markov, and John~P Hayes.
+\newblock {\em Quantum circuit simulation}.
+\newblock Springer Science \& Business Media, 2009.
+
+\bibitem{vilmart2021quantum}
+Renaud Vilmart.
+\newblock Quantum multiple-valued decision diagrams in graphical calculi.
+\newblock {\em arXiv:2107.01186}, 2021.
+
+\bibitem{wegener2000branching}
+Ingo Wegener.
+\newblock {\em Branching programs and binary decision diagrams: theory and
+  applications}.
+\newblock SIAM, 2000.
+
+\bibitem{zulehner2017one}
+Alwin Zulehner and Robert Wille.
+\newblock One-pass design of reversible circuits: Combining embedding and
+  synthesis for reversible logic.
+\newblock {\em IEEE Transactions on Computer-Aided Design of Integrated
+  Circuits and Systems}, 37(5):996--1008, 2017.
+
+\bibitem{zulehner2018advanced}
+Alwin Zulehner and Robert Wille.
+\newblock Advanced simulation of quantum computations.
+\newblock {\em IEEE Transactions on Computer-Aided Design of Integrated
+  Circuits and Systems}, 38(5):848--859, 2018.
+
+\end{thebibliography}

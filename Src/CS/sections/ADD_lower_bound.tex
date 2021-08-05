@@ -1,0 +1,21 @@
+\subsection{Exponential separation of QMDD from ADD}
+
+Algebraic Decision Diagrams (\textsf{ADD}) are a precursor to \textsf{QMDD}s.
+The \textsf{QMDD} data structure groups together nodes representing subfunctions which differ only by a multiplicative constant.
+By labelling the edges with appropriate weights, no information about the state is lost.
+In this Section, we show that this leads to an exponential decrease in the size of the diagram.
+Put another way, we have $\textsf{ADD}\subsetneq \textsf{QMDD}$.
+In the literature, \textsf{ADD} is sometimes called \textsf{QuiDD}.
+
+\begin{theorem}
+	There is an infinite family of quantum states $\{\ket{\phi_n}_n\}_{n}$ such that every reduced, ordered \textsf{ADD} needs $\Theta(2^n)$ nodes to store $\ket{\phi_n}$, but every \textsf{QMDD} needs only $\Theta(n)$ nodes.
+\end{theorem}
+\begin{proof}
+	The state is the Fourier-transformed state
+	\begin{align}
+		\ket{\phi_n}=(\ket{0}+e^{i\pi})\otimes (\ket{0}+e^{i\pi2^{-1}})\otimes \cdots \otimes (\ket{0}+e^{i\pi2^{-n+1}})
+	\end{align}
+	Since the state is a product state, its QMDD only has $n$ nodes, not counting the \textsf{leaf} node.
+	
+	However, the amplitudes of each basis vector is different, so the \textsf{ADD} has an exponential number of leaves, each containing a different amplitude. Namely, the amplitude in $\ket{\phi}_n$ of basis vector $\ket{x}_n$ is $\frac{1}{\sqrt{2^n}}e^{i\pi x2^{-n}}$.
+\end{proof}

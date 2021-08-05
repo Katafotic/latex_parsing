@@ -1,0 +1,163 @@
+\section{Update PAULI-ISO-QMDD after Clifford unitary}
+
+Roughly: two parts. 1: Update rule for general matrices and general (Pauli group) isomorphism QMDD. 2: Update rule for Clifford gates on Pauli isomorphism QMDDs representing stabilizer states.
+
+
+\subsection{General update rule}
+
+(We assume that the data structures for vectors and matrices have been described in earlier sections.)
+
+1. Produce $\ket{\psi}:=A\ket{\phi}$, namely  $A\ket{phi_0}$ en $A\ket{phi_1}$. Here $A$ 
+
+2. Check whether the node $\ket{\psi}$ is already in the database.
+
+3. Otherwise, check whether $\ket{\psi}$ is $\mathcal{G}$-isomorphic to a node already in the database. If so, reroute the edges of $\ket{\psi}$ to that node, and delete all newly orphaned nodes.
+
+(Bonus algorithm: Compute expectation values: $\bra{\psi} H \ket{\psi}$. Find a place to put this.)
+
+TODO: Sketch of algorithm on A4.
+
+\subsection{Special update rule}
+
+\subsubsection{Applying a CNOT gate}
+
+1. Update rule for CNOT
+
+2. Try to prune the isomorphism into a single global phase
+
+\subsubsection{Applying a Single-qubit Clifford gate}
+
+1. Expression for Hadamard gate, Phase gate
+
+2. Finding a new isomorphism (work in progress)
+
+
+
+(The remainder of this text is old)
+
+Here, we explain briefly why updating Pauli-ISO-QMDDs after a Clifford is nontrivial in the general case.
+Below, an algorithm that performs the task is presented
+
+\subsection{Why the Clifford update is nontrivial}
+
+Stabilizer states in Pauli-iso-qmdd has multiple flavours:
+
+\begin{itemize}
+\item Z-flavour: read the QMDD as 'in the computational basis'
+\item Graph-State-flavour: use Z-flavour but only use Pauli strings containing I and Z (at this point, this flavour precisely contains all graph states), while keeping a list of single-qubit Cliffords that will be applied to the graph state.
+\item Pauli-flavour: for each qubit, keep a flag that indicates whether it is stored in the X,Y or Z-basis
+\end{itemize}
+
+
+Performing a single-qubit Clifford in Z-flavour requires an algorithm to update a subpart of the tree with $(\unit + \beta P) / \sqrt{2}$ where $P$ is a Pauli string and $\beta \in \{\pm 1, \pm i\}$.
+This follows from a local basis transform, which for example for Z to X-basis follows from the identity
+\[
+    \ket{0} \otimes \ket{\phi} + \ket{1} \otimes P\ket{\phi}
+    = 
+    \ket{+} \otimes \frac{\unit + P}{\sqrt{2}} \ket{\phi} + \ket{-} \otimes \frac{\unit - P}{\sqrt{2}}\ket{\phi}
+.
+\]
+CNOTs, on the other hard, are straightforward in Z-flavour.
+
+For Pauli-flavour, the story is reversed: for the same reason, CNOTs are hard but single-qubit Cliffords are trivial.
+
+[For more explanation, see the presentation \url{miscellaneous/2020_05_19_treeform_clifford_update_difficulty.pdf}]
+
+
+
+\subsection{An algorithm for the Clifford update}
+
+Here, we sketch how to update a stabilizer state in treeform after application of a single-qubit Clifford or a CNOT.
+We use the Z-flavour of treeform, i.e. a stabilizer state on $n$ qubit is recursively defined as $\ket{\phi} = \ket{a} \otimes \ket{\psi}$ or $\ket{\phi} = (\ket{0} \otimes \ket{\psi} + \alpha \ket{1}\otimes \otimes P \ket{\psi}) / \sqrt{2}$, where $a \in \{0, 1, \pm 1, \pm i\}$ and $\alpha \in \{\pm 1, \pm i\}$ and $\ket{\psi}$ is an $n-1$ qubit stabilizer state (or equals $1$ in case $n=1$).
+
+First note that if the most significant qubit is not involved in the application of a Clifford $C$, then in both the knife- and fork cases, it can easily be seen that the Clifford 'propogates' down the tree with little overhead until it meets the first qubit it acts upon:
+
+knife: $C\ket{a} \otimes \ket{\psi} = \ket{a} \otimes \left( C\ket{\psi}\right)$
+
+fork:
+$
+C \left( \ket{0} \otimes \ket{\psi} + \alpha \ket{1} \otimes Q\ket{\psi}\right)
+=
+\ket{0} \otimes C\ket{\psi} + \alpha \ket{1} \otimes \left(CQC^{\dagger}\right) \left(C\ket{\psi}\right)
+$
+
+\subsubsection{Updating stabilizer state in Treeform after a CNOT}
+
+Denote the stabilizer state by $\ket{\phi}$
+
+\textbf{Claim: updating after a CNOT can be done in time $\mathcal{O}(n^2)$, where $n$ is the number of qubits of $\ket{\phi}$.}
+
+We distinguish two cases.
+
+If $\ket{\phi}$ is a `knife', i.e. $\ket{\phi} = \ket{a} \otimes \ket{\psi}$ for some $a \in \{0, 1, \pm 1, \pm i\}$ and $\ket{\psi}$ is an $(n-1)$-qubit stabilizer state, then the update is straightforward: if $a\in \{0, 1\}$, then the post-CNOT state is a knife and becomes a fork otherwise.
+For example, if $\ket{\phi} = \ket{+}\otimes\ket{\psi}$, then $CNOT\ket{\phi} = \ket{0} \ket{\psi} + \ket{1} \otimes X \ket{\psi}$.
+(Note we could still ``reduce'' the tree [in the sense of reducing a decision diagram], which we treat below]
+
+If $\ket{\phi}$ is a `fork', i.e. $\ket{\phi} = \ket{0} \otimes \ket{\psi} + \alpha \ket{1}\otimes \otimes P \ket{\psi}$ (omitting normalization), then $CNOT\ket{\phi} = \ket{0} \otimes \ket{\psi} + \alpha \ket{1} \otimes XP \ket{\psi}$.
+
+The only remaining question is: can we reduce this tree?
+That is, are the post-CNOT states which are a fork, really a fork or can they also be written as knife?
+
+We claim that this can be done in time $\mathcal{O}(n^2)$ by distinguishing the modulus of the expectation value of the fork-operator (i.e. the Pauli-string $Q$ in $\ket{0} \otimes \ket{\psi} + \alpha \ket{1} \otimes Q\ket{\psi}$) with $\ket{\phi}$ to equal 1, or to be less.
+To be precise: if $|\bra{\phi} Q \ket{\phi}| = 1$, then $Q\ket{\phi} = \bra{\phi} Q\ket{\phi} \ket{\phi}$ and thus the fork can be reduced to $\left(\ket{0} + \alpha \bra{\phi} Q\ket{\phi} \ket{1} \right) \otimes \ket{\psi}$, and otherwise it remains as it is.
+
+We now claim that $\bra{\phi} Q \ket{\phi}$ can be determined in time $\mathcal{O}(n^2)$ by recursing over the $n$ qubits, and each step takes at most time $\mathcal{O}(n)$.
+The knife case is straightforward: $\bra{\phi} A \ket{\phi} = \bra{\phi} A_0 \ket{\phi} \cdot \bra{\phi} A_r \ket{\phi}$, and the lefmost expectation value is computed in constant time.
+
+[TODO: IDEA: below, we assume that $A$ is a general string. Can we exploit the fact that we know its structure (i..e $X \cdot P$ where $P$ is a known string)?]
+
+The fork case is a bit more involved (omitting adjoint signs since Pauli strings are self-adjoint):
+\begin{eqnarray}
+\bra{\phi} A \ket{\phi}
+    &=&
+\bra{0} A_0 \ket{0} \otimes \bra{\psi} A_r \ket{\psi}
++
+\\
+    &&
+\bra{1} A_0 Q_0 \ket{0} \otimes \bra{\psi} A_r Q_r \ket{\psi}
++
+\\
+    &&
+\bra{1} Q_0 A_0 \ket{0} \otimes \bra{\psi} Q_r A_r \ket{\psi}
++
+\\
+    &&
+\bra{1} Q_0 A_0 Q_0 \ket{1} \otimes \bra{\psi} Q_r A_r Q_r \ket{\psi}
+\end{eqnarray}
+
+Note by the fact that $Q$ and $A$ are Pauli strings, either the first and last terms or the second and third terms are zero (because Pauli strings either commute or anticommute).
+The remaining terms only differ by a $\pm 1$ factor.
+Which is the case, can be determined by computing whether the string commute or anticommute, which can be done in time $\mathcal{O}(n)$ since the strings are of length $n$.
+What remains is to compute $\bra{\psi} Q_r A_r \ket{\psi}$ or $\bra{\psi} A_r \ket{\psi}$ (depending on which terms survive), which is done in the recursive step.
+
+
+
+
+
+
+\subsubsection{Updating Treeform after a single-qubit Clifford}
+
+Updating a stabilizer state in treeform $\ket{\phi}$ after a single-qubit Clifford for a knife-case is straightforward and uses the fact that the set $\{\ket{0}, \ket{1}, \ket{\pm}, \ket{\pm i}$ is closed under single-qubit Cliffords.
+
+
+For a fork, the algorithm requires slightly different operations for each Clifford, but for each, the underlying principle is the same and is again based on the fact that they map the set of single-qubit stabilizer states to itself.
+
+As an example, we treat the application of $H$ to the first qubit of the state $\ket{0} \otimes \ket{\psi} + \alpha \ket{1} \otimes P \ket{\psi}$, which equals
+\[
+\ket{+} \otimes \ket{\psi} + \alpha \ket{-} \otimes P \ket{\psi}
+\]
+and can be rewritten as
+\[
+    \ket{0} \otimes (\unit + \alpha P) \ket{\psi} + \ket{1} \otimes (\unit - \alpha P) \ket{\psi}
+    .
+\]
+
+Now we need two things:
+
+- a pauli string $A$ that maps $\unit + \alpha P$ to $\unit - \alpha P$. Any string that anitcommutes with $P$ will do [TODO NEEDS CHECKING!] and can be found in time $\mathcal{O}(n)$.
+
+- rewriting $(\unit + \alpha P) \ket{\psi}$ in treeform. This is more involved and can be done recursively on the size of $\ket{\psi}$. At each level, it is required to check whether $P$ and the fork-operator of that level commute or anticommute (in a similar fashion to the `reduction of the tree' in the CNOT-application explained above) and thus requires a total runtime of $\mathcal{O}(n^2)$.
+
+
+
+

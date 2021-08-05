@@ -1,0 +1,126 @@
+\documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
+%This is a template for producing LIPIcs articles. 
+%See lipics-v2021-authors-guidelines.pdf for further information.
+%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
+%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
+%for section-numbered lemmas etc., use "numberwithinsect"
+%for enabling cleveref support, use "cleveref"
+%for enabling autoref support, use "autoref"
+%for anonymousing the authors (e.g. for double-blind review), add "anonymous"
+%for enabling thm-restate support, use "thm-restate"
+%for enabling a two-column layout for the author/affilation part (only applicable for > 6 authors), use "authorcolumns"
+%for producing a PDF according the PDF/A standard, add "pdfa"
+
+%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
+\input{preamble.tex}
+\input{macros}
+\bibliographystyle{plainurl}% the mandatory bibstyle
+
+%\def\ourtitle{Exponential complexity reduction in QMDDs by adding isomorphisms}
+\def\ourtitle{LIMDD: A Decision Diagram for Simulation of Quantum Computing Including Stabilizer States}
+\title{\ourtitle} %TODO Please add
+
+\titlerunning{LIMDD: A Decision Diagram for Simulation of Quantum Computing} %TODO optional, please use if title is longer than one line
+
+
+% % % % % NOT DISPLAYING AUTHOR LIST FOR SODA'S DOUBLE-BLIND PEER REVIEW PROCESS
+\input{authorlist.tex}
+%\input{authorlist-doubleblind.tex}
+
+%Copyright: to do} %TODO mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+\ccsdesc[500]{\vspace{-1.2em}Mathematics of computing~Decision diagrams}
+%\ccsdesc[100]{Theory of computation~Quantum complexity theory}
+ %TODO mandatory: Please choose ACM 2012 classifications from https://dl.acm.org/ccs/ccs_flat.cfm 
+
+\keywords{\vspace{-1.2em}Simulation of Quantum Computing, Decision Diagrams} %TODO mandatory; please add comma-separated list of keywords
+
+\category{} %optional, e.g. invited paper
+
+\relatedversion{} %optional, e.g. full version hosted on arXiv, HAL, or other respository/website
+%\relatedversiondetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93]{Classification (e.g. Full Version, Extended Version, Previous Version}{URL to related version} %linktext and cite are optional
+
+%\supplement{}%optional, e.g. related research data, source code, ... hosted on a repository like zenodo, figshare, GitHub, ...
+%\supplementdetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93, subcategory={Description, Subcategory}, swhid={Software Heritage Identifier}]{General Classification (e.g. Software, Dataset, Model, ...)}{URL to related version} %linktext, cite, and subcategory are optional
+
+%\funding{(Optional) general funding statement \dots}%optional, to capture a funding statement, which applies to all authors. Please enter author specific funding statements as fifth argument of the \author macro.
+
+%\acknowledgements{I want to thank \dots}%optional
+
+%\nolinenumbers %uncomment to disable line numbering
+
+%\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{}
+\EventNoEds{2}
+\EventLongTitle{}
+\EventShortTitle{}
+\EventAcronym{}
+\EventYear{}
+\EventDate{}
+\EventLocation{}
+\EventLogo{}
+\SeriesVolume{}
+\ArticleNo{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%\let\sectionold\section
+%\renewcommand\section[1]{\sectionold{#1}\vspace{-.5em}}
+
+\begin{document}
+\renewcommand\subsectionautorefname{Section}
+
+\maketitle
+%\thanks{${}^{\ast}$These authors contributed equally.}
+\input{sections/abstract.tex}
+
+%{\setlength{\parskip}{0pt}
+%\tableofcontents
+%}
+%\input{sections/toc_proposal.tex}
+\input{sections/introduction.tex}
+\input{sections/preliminaries.tex}
+%\input{sections/qmdds_for_large_graph_states.tex}
+\input{sections/iso_qmdd_datastructure.tex}
+%\input{sections/stabilizer_update_rule.tex}
+%\input{sections/iso_qmdd_update_rule.tex}
+\input{sections/exponential_separations.tex}
+%\input{sections/induced_subgraph_function.tex}
+%\input{sections/X_iso_qmdd_lower_bound.tex}
+%\input{sections/ADD_lower_bound.tex}
+\input{sections/pauli_iso_qmdd_manipulation.tex}
+%\input{sections/canonicity.tex}
+\input{sections/hard-to-simulate-states.tex}
+%\input{sections/iso_qmmd_measurement.tex}
+%\input{sections/related_work.tex}
+\input{sections/discussion.tex}
+%\input{sections/decision_diagrams.tex}
+%\input{sections/from_compendium.tex}
+
+
+\bibliography{lit}
+
+\appendix
+% Some of these appendices are commented out only for faster compilation
+
+\input{sections/qmdd_graph_state_lower_bound.tex}
+\input{sections/proof_stabilizer_states_line_iso_qmdds.tex}
+%%%\input{sections/observations_about_isoqmdds.tex} % DEPRECATED
+%%%\input{sections/isomorphism_detection_algorithm_correctness_proof.tex} % DEPRECATED
+%%%\input{sections/pauli_isomorphism_detection.tex} % DEPRECIATED
+%%%\input{sections/update_algorithms} % DEPRECATED
+%%%\input{sections/separation-discussion.tex} %DEPRECATED
+\input{sections/advanced-algorithms.tex}
+%\input{sections/non-diagonal-groups.tex}
+%\input{sections/correctness_proofs_algorithms.tex}
+
+
+
+% % % % % DEPRECATED these sections do not go into the final manuscript % % % % %
+%\input{sections/app_quantum101.tex}
+%\tableofcontents
+
+\end{document}

@@ -1,0 +1,69 @@
+\section{Subroutines for quantum-circuit simulation}
+\label{sec:update-algorithms}
+
+We describe algorithms for the four subroutines used in \autoref{sec:simulation}.
+Each algorithm takes a LIM-QMDD as input.
+
+            \textbf{\textsf{PartialExpand}: convert an isomorphism node $\phi$ to a Shannon node with isomorphism nodes as children (isomorphism group $G \subseteq \textsf{DT}$).}
+        Write $\ket{\phi} = \pi_1 \otimes \pi_{\rm rest} \ket{\psi}$, where $\pi_1 \in G$, $\pi_{\rm rest} \in G^{\otimes m}$ with $m=\index(\phi)$, and where $\psi$ is a Shannon node $\ket{\psi} = \alpha_0\ket{0}\ket{\psi_0} + \alpha_1\ket{1}\ket{\psi_1}$.
+       Replace $\phi$ by a Shannon node with as children isomorphism nodes $\pi_{\rm rest}\ket{\psi_j}$ and edge labels $\beta_j = \bra{j} \pi_1 (\alpha_0\ket{0} + \alpha_1\ket{1})$ with subscript $j=0$ (1) indicating the low (high) edge.
+%        The correctness of this algorithm follows directly from Lemma \todo[inline]{add}, which states that if $G \subseteq \textsf{DT}$, the children nodes of $\phi$ are isomorphic to the children nodes of $\psi$.
+        The LIM-QMDD grows by two nodes every time \textsf{PartialExpand} is applied.
+
+
+
+
+               \textbf{\textsf{Swap}: move qubit $k$ to the most significant position.}
+               We describe an algorithm \textsf{SwapAdjacent}$(j, j+1)$ which swaps qubits $j$ and $j+1$. 
+               By applying this algorithm to the qubit pairs $(k-1, k), (k-2, k-1), \dots, (1, 2)$, the qubit with index $k$ will have moved to the most significant position.
+               The algorithm \textsf{SwapAdjacent}$(j, j+1)$ is applied to all nodes $\phi$ with $\index(\phi)=j$ individually.
+In case $\phi$ is a Shannon node and so are its children, then we can write 
+        \[
+\ket{\phi} =
+\alpha_0\alpha_{00}\ket{00}\ket{\phi_{00}}
++
+\alpha_0\alpha_{01}\ket{01}\ket{\phi_{01}}
++
+\alpha_1\alpha_{10}\ket{10}\ket{\phi_{10}}
++
+\alpha_1\alpha_{11}\ket{11}\ket{\phi_{11}}
+\]
+so for permuting $\phi$ and its children we only need to reroute edges corresponding to
+        \[
+\ket{\phi} \mapsto
+\alpha_0\alpha_{00}\ket{00}\ket{\phi_{00}}
++
+\alpha_0\alpha_{10}\ket{01}\ket{\phi_{10}}
++
+\alpha_1\alpha_{01}\ket{10}\ket{\phi_{01}}
++
+\alpha_1\alpha_{11}\ket{11}\ket{\phi_{11}}
+.
+\]
+        In case either $\phi$ or one of its children is an isomorphism node, then apply \textsf{PartialExpand} to those nodes to make them Shannon nodes.
+        \textsf{SwapAdjacent} adds at most 6 nodes since it calls \textsf{PartialExpand} at most 3 times, so \textsf{Swap} increases the size of the LIM-QMDD by at most a factor of 3.
+
+               \textbf{\textsf{AddLIMQMDD}: given LIM-QMDDs for two $n$-qubit states $\ket{\phi}$ and $\ket{\psi}$, construct a LIM-QMDD for $\ket{\phi} + \ket{\psi}$.}
+               If $\phi$ and $\psi$ are both Shannon nodes, write
+               $\ket{\phi} = \alpha_0 \ket{0}\otimes\ket{\phi_0} + \alpha_1 \ket{1}\otimes\ket{\phi_1}$
+               and
+               $\ket{\psi} = \beta_0 \ket{0}\otimes\ket{\psi_0} + \beta_1\ket{1}\otimes\ket{\psi_1}$ and observe that 
+               \[
+               \ket{\phi} + \ket{\psi}=
+               \ket{0}\otimes\ket{\eta_0} + \ket{1}\otimes\ket{\eta_1}
+               \qquad\textnormal{ where }
+               \ket{\eta_j} = \alpha_j\ket{\phi_j} + \beta_j\ket{\psi_j}
+               \textnormal{ for $j\in \{0, 1\}$}
+               .
+           \]
+           Now construct LIM-QMDDs for $\ket{\eta_j}$ by calling \textsf{AddLIMQMDD} on $\alpha_j\ket{\phi_j}$ and $\beta_j\ket{\psi_j}$ for both $j=0$ and $j=1$.
+A LIM-QMDD for $\ket{\phi} + \ket{\psi}$ is constructed by taking a fresh Shannon node with $\eta_0$ and $\eta_1$ as children on the 0-edge and 1-edge, respectively, and setting the weight of both edges to 1.
+        In case at least one of $\phi$ or $\psi$ is not an isomorphism node, apply the \textsf{PartialExpand} procedure to make them into a Shannon node.
+        The \textsf{AddLIMQMDD} subroutine has exponential runtime in $n$.
+        
+        
+
+\todo[inline]{Come up with a notation to shorten these algorithms considerably! See my attempt in the parameters of MakeNode. Consider the use of cases in a separate definition or inside the algorithm.}
+
+
+\textbf{\textsf{SquaredNorm: }return the squared norm $|\langle \psi |\psi \rangle|^2$ of a LIM-QMDD node $\psi$ (unitary isomorphism set $G$).} If $\psi$ is a Shannon node with $\ket{\psi} = \alpha_0 \ket{0}\otimes \ket{\psi_0} + \alpha_1 \ket{1}\otimes\ket{\psi_1}$, then return $|\alpha_0|^2\cdot \textnormal{\textsf{SquaredNorm}}(\psi_0) + |\alpha_1|^2 \textnormal{\textsf{SquaredNorm}}(\psi_1)$, while if it is an isomorphism node with $\ket{\psi} = \pi\ket{\phi}$, with $\pi$ the isomorphism, then return $|\langle \psi|\psi\rangle |^2 = |\langle \phi|\pi^{\dagger} \pi |\phi\rangle|^2 = |\langle \phi | \phi\rangle|^2$. The algorithm is made efficient by dynamic programming, where the norm of a node is computed once and then stored for potential later re-use.

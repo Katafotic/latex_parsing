@@ -1,0 +1,43 @@
+\section{Discussion \label{sec:discussion}}
+
+We have introduced \limdd, a novel decision diagram-based method to simulate quantum circuits, which enables polynomial-size representation of a strict superset of stabilizer states and of the states represented by polynomially-large \qmdds.
+To prove this, we have shown the first lower bounds on the size of \qmdds for stabilizer states:
+they are exponential-size for certain families of stabilizer states.
+\limdds achieve a more succinct representation by representing states up to 
+local invertible maps which uses single qubit (local) operations from a group $G$.
+We have investigated the choices $G=\pauli$, $G=\braket{Z}$ and $G=\braket{X}$,
+and found that any choice suffices for an exponential advantage over \qmdds;
+notably, the choice $G=\pauli$ allows us to succinctly represent stabilizer states.
+We also defined reduction rules for Pauli-\limdd and showed that for each set of 
+quantum states which are equivalent under local Pauli operations,
+modulo normalization factor, has a unique reduced Pauli-\limdd as representative.
+
+Furthermore, we showed how to simulate arbitrary quantum circuits, encoded as Pauli-\limdds.
+The resulting algorithms are often faster than for \qmdds.
+In contrast to \qmdds, Clifford circuits (initialized to $\ket{0}$)
+can be simulated by Pauli-\limdds in polynomial time.
+This in itself is not an interesting feat, since efficient simulation methods for
+the stabilizer regime have been known since the Gottesman-Knill theorem.
+However, we also showed that Pauli-\limdds can efficiently simulate
+a circuit family we call Hamming weight-controlled Clifford circuits.
+And we provide empirical evidence that these circuits are hard for stabilizer-rank
+based simulation methods.
+%we were strengthened in this exception by exploratory numerics.
+
+An obvious next step is to investigate other choices for $G$.
+Of interest are both the representational capabilities of such diagrams
+(do they represent interesting states?), and the algorithmic capabilities
+(can we still find efficient algorithms which make use of these diagrams?).
+In this vein, an important question is what the relationship is between \glimdds
+(for various choices of $G$) and existing formalisms for the classical simulation of quantum circuits, such as those based on match-gates~\cite{terhal2001classical,jozsa2008matchgates,hebenstreit2020computational} and tensor networks~\cite{orus2014practical}.
+It would also be interesting to compare \limdds to graphical depictions of quantum computation, 
+following similar work for \qmdds~\cite{vilmart2021quantum}.
+We leave empirical evaluations into the consequences of \limdd methods for efficient
+quantum circuit simulation, for future work. This would obviously include a 
+comparison with stabilizer rank simulation~\cite{bravyi2019simulation}.
+
+Finally, we note that the current definition of \limdd imposes a strict total order
+over the qubits along every path from root to leaf.
+It is known that the chosen order can greatly influence the size of the DD~\cite{rudell1993dynamic,wegener2000branching},
+making it interesting to investigate variants of \limdds with a flexible ordering.
+

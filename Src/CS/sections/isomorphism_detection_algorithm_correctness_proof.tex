@@ -1,0 +1,731 @@
+\section{Isomorphism detection algorithm}
+\label{sec:isomorphism-finding-torus}
+
+\subsection{Detecting isomorphism between two \textsf{\limdd} nodes}
+\label{sec:isomorphism-finding-detailed}
+
+In this section, we sketch an algorithm which takes a reduced ordered \textsf{\limdd} and applies reduction rules until it is strongly reduced.
+That is, it identifies those pairs of nodes that represent isomorphic state vectors, and merges them by turning one of them into an Isomorphism node.
+This algorithm processes the nodes of the graph layer by layer, starting at the bottom and working upwards towards the root.
+We first give an algorithm which detects whether two given Shannon nodes are isomorphic, and, if so, constructs an isomorphism.
+This algorithm calls a subroutine, given in \autoref{sec:construct-automorphism-group}, which constructs the automorphism group of a node's state vector.
+% todo mention that automorphism group is stored as node label
+% todo isomorhpism is a coset of automorphism group; so one gives you the other.
+% todo this algorithm is recursive, so it's like polynomial, and easy
+% todo like, storage is also polynomial.
+
+Note that two nodes in different layers of the graph represent vectors of different lengths, so in particular they are not isomorphic.
+Therefore it suffices to consider only nodes from the same layer, i.e., with $\index(u)=\index(v)$.
+
+% todo can one state be transformed to another state using only single-qubit gates?
+Recall that, for our purposes, an isomorphism is an operator $A$ of the form $A=e^\theta A_n\otimes \cdots\otimes A_1$, such that $A\ket{u}=\ket{v}$ and the $A_i$ are all $2\times 2$ invertible matrices (\autoref{def:isomorphism}).
+We will not store the $2^n\times 2^n$ matrix; instead we will only store the $n$ $2\times 2$ matrices $A_i$, and a complex number $\theta\in\mathbb C$, with the understanding that they correspond to each other via the function $\zeta$:
+\begin{align}
+(\theta,A_1,\ldots, A_n) \overset{\zeta}{\mapsto}e^\theta A_n\otimes\cdots\otimes A_1
+\end{align}
+%An isomorphism is a series $(z,A_1,\ldots, A_n)$ where $z\in\mathbb C$ and $A_i$ are $2\times 2$ invertible matrices, such that $e^zA_1\otimes\cdots A_n\ket{u}=\ket{v}$.
+
+In this section we reason only about isomorphisms where the operators $A_i$ are of the form $A_i=\begin{smallmat}1 & 0 \\ 0 & z_i\end{smallmat}$.
+%Algorithms which reason about a larger set of operators, which we call the Dihedral Torus, appear in \ref{sec:isomorphism-finding-dihedral-torus}.
+
+We now sketch an algorithm which detects whether the Shannon nodes $u$ and $v$ represent isomorphic quantum state vectors.
+Its output is either ``Not isomorphic'', or it outputs an isomorphism.
+The correctness of the algorithm is proved in \autoref{sec:isomorphism-finding-correctness}.
+
+% todo here we insert a bit about isomorphisms and automorphisms
+\paragraph{Sketch of the derivation of the algorithm.}
+Rather than find one isomorphism, we will find \emph{all} of them.
+We use the insight that the set of isomorphisms $\Iso(\ket{u},\ket{v})$ is related to the set of automorphisms $\Aut(\ket{u})$.
+Namely, the set $\Aut(\ket{u})$ forms a group (under multiplication), and the set $\Iso(\ket{u},\ket{v})$ is a coset of that group, i.e.,
+\begin{align}
+\Iso(\ket{u},\ket{v})=\sigma\circ \Aut(\ket{u}) =\{\sigma\circ\pi|\pi\in\Aut(u)\}
+\end{align}
+To see this, note first that if $\pi_1,\pi_2$ are automorphisms, then $\pi_2\circ \pi_1\ket{u}=\pi_2\ket{u}=\ket{u}$, so the set of automorphisms is closed under composition; hence, it is a group.
+Second, if $\sigma\in \Iso(\ket{u},\ket{v})$ is an isomorphism (i.e., we have $\sigma\ket{u}=\ket{v}$), and $\pi$ is an automorphism of $\ket{u}$, then $\sigma\circ \pi\ket{u}=\sigma\ket{u}=\ket{v}$, so we see that $\sigma\circ \pi$ is another isomorphism, so indeed the set of isomorphisms forms a coset.
+We can effectively store ``all'' isomorphisms by storing the automorphism group of $\ket{u}$, and an isomorphism $\sigma$.
+Given that we consider only operators of the special form $A_i=\begin{smallmat}1 & 0 \\ 0 & z_i\end{smallmat}$, an isomorphism $\pi$ behaves as follows:
+\begin{align}
+A\ket{u}=&\ket{0}A^\prime\ket{u_0}+be^{z_n}\ket{1}A^\prime\ket{u_1} \\
+= & \ket{0}\ket{v_0}+d\ket{1}\ket{v_1}
+\end{align}
+We see that the isomorphism must have the special property that $A^\prime$ is an isomorphism mapping $\ket{u_0}$ to $\ket{v_0}$ and $\ket{u_1}$ to $(de^{-z_n}/b)\ket{v_1}$.
+Hence $A^\prime\in\Iso(\ket{u_0},\ket{v_0})\cap \Iso(\ket{u_1},\ket{v_1})$.
+We observed earlier that these sets are in fact cosets of the automorphism groups $\Aut(\ket{u_0})$ and $\Aut(\ket{u_1})$, so we can write this as $A^\prime\in (\pi^0\circ \Aut(\ket{u_0}))\cap (\pi^1\circ \Aut(\ket{u_1}))$, for appropriate isomorphisms $\pi^0$ and $\pi^1$.
+If this intersection is not empty, then in fact we have $(\pi^0\circ\Aut(\ket{u_0}))\cap (\pi^1\circ\Aut(\ket{u_1}))=A^\prime\circ (\Aut(\ket{u_0}\cap\Aut(\ket{u_1})))$
+Using this element $\pi$, we can then find an isomorphism between $\ket{u}$ and $\ket{v}$.
+This explains why it is useful to consider the automorphism group here.
+The algorithm, then, is as follows, by induction on the number of qubits.
+
+
+
+\paragraph{Base case.} The base case of the algorithm is the \textsf{leaf} node of the \textsf{\limdd}, which represents the scalar $1$.
+This node is the only one in its layer, so we have $u=v=\textsf{leaf}$.
+A node is always isomorphic to itself, so in this case we output ``isomorphic'', and output the isomorphism $(0)$.
+
+\paragraph{Induction case: $\geq 1$ qubits}
+Suppose that $u$ and $v$ are both states on $n$ qubits, with
+\begin{align}
+\ket{u}=a&\ket{0}\ket{u_0}+b\ket{1}\ket{u_1} \\
+\ket{v}=c&\ket{0}\ket{v_0}+d\ket{1}\ket{v_1}
+\end{align}
+If $a\ne c$, or if $a=c=1$ and exactly one of $b,d$ is zero, then we output ``not isomorphic''.
+Otherwise, we distinguish three cases.
+
+\textbf{Case 1. }
+Suppose $a=c=1$ and $b=d=0$.
+Then, if $\ket{u_0}\not\simeq\ket{v_0}$ we output ``not isomorphic''.
+If $\pi$ is an isomorphism witnessing $\pi\ket{u_1}=\ket{v_1}$, with
+\begin{align}
+\pi = e^\lambda\begin{smallmat}1 & 0 \\ 0 & z_{n-1}\end{smallmat}\otimes \cdots\otimes \begin{smallmat}1 & 0 \\ 0 & z_{1}\end{smallmat}
+\end{align}
+then $I\otimes \pi$ is an isomorphism witnessing $(I\otimes\pi)\ket{u}=\ket{v}$.
+%So we can return $(\lambda,z_1,\ldots, z_{n-1},I)$. % todo replace z_1 with matrices
+So we can return the isomorphism $(\lambda,\begin{smallmat}1 & 0 \\ 0 & e^{z_1}\end{smallmat},\ldots, \begin{smallmat}1 & 0 \\ 0 & e^{z_{n-1}}\end{smallmat},I)$.
+
+\textbf{Case 2. }
+Suppose $a=c=0$, and therefore $b=d=1$.
+Then we check whether $\ket{u_1}\simeq\ket{v_1}$.
+We proceed just as in Case 1.
+
+\textbf{Case 3. }
+The remaining case is when $a=c=1$ and $b$ and $d$ are nonzero numbers.
+If $\ket{u_0}\not\simeq \ket{v_0}$ or $\ket{u_1}\not\simeq\ket{v_1}$, then we output ``not isomorphic''.
+Otherwise, let $\pi^0$ and $\pi^1$ be the respective isomorphisms.
+
+Let $B_0,B_1$ be bases for the automorphisms groups $\braket{B_0}=\Aut(u_0,1)$ and $\braket{B_1}=\Aut(u_1,1)$.
+Construct a basis $B_\cap$ for the group $\Aut(u_0,1)\cap \Aut(u_1,1)$.
+Construct sets $C_0,C_1,C_\bot$ such that $B_\cap\cup C_0$ is a basis for $\Aut(u_0,1)$, $B_\cap\cup C_1$ is a basis for $\Aut(u_1,1)$ and $B_\cap\cup C_0\cup C_1\cup C_\bot$ is a basis for $\mathbb C^n$.
+Let $\vec{s}=(1,0,\ldots, 0)$.
+
+Decompose $\pi^0$, $\pi^1$ and $\vec{s}$ in this basis, so that
+\begin{align}
+\pi^0=&\pi_\cap^0+\pi_0^0+\pi_1^0+\pi_\bot^0 \\
+\pi^1=&\pi_\cap^1+\pi_0^1+\pi_1^1+\pi_\bot^1 \\
+\vec{s}=&\vec s_\cap+\vec s_0+\vec s_1+\vec s_\bot
+\end{align}
+If $\vec s_\bot\not\in \braket{\pi_\bot^0-\pi_\bot^1}$, then output ``not isomorphic''.
+Otherwise, say that $\vec{s}_\bot=\lambda(\pi_\bot^0-\pi_\bot^1)$.
+Let $z=\log(b)-\log(a)-1/\lambda$, let $\vec{t}=z\vec{s}+\pi^1$, and decompose $\vec t$ in the basis above, obtaining the components $\vec t = \vec t_\cap + \vec t_0+\vec t_1+\vec t_\bot$.
+Then we return the isomorphism $\vec t_0+\pi_0^1+\pi_\bot^0$.
+
+
+\subsubsection{Constructing the automorphism group}
+\label{sec:construct-automorphism-group}
+
+We sketch an algorithm which constructs a basis for the automorphism group of a vector $\ket{v}$:
+\begin{align}
+\Aut(v,\lambda)=\{A\ |\ A\ket{v}=\lambda\ket{v}\}
+\end{align}
+The basis we build will be for the group $\Aut(v,1)$.
+Again, for sake of exposition, in this section we restrict ourselves to the case when $A$ is of the form $A=e^\theta\begin{smallmat}1 & 0 \\ 0 & z_n\end{smallmat} \otimes\cdots\otimes \begin{smallmat}1 & 0 \\ 0 & z_1\end{smallmat}$, but algorithms for other groups can be found in the appendix.
+% todo write up those algorithms in the appendix. Which groups? Dihedral torus and: ?? <X>, <Z>, Pauli?
+Operators of this form, form a subgroup of a state vector's automorphism group.
+
+% todo pull zeta up to the isomorphism text
+The automorphism group can be infinitely large (it is a continuous set).
+Fortunately, it suffices to store only a finite set of automorphisms which generate this group.
+We will not store the $2^n\times 2^n$ matrix corresponding to each operator; instead, we will store only the length $n+1$ vectors of complex numbers, with the understanding that they correspond to operators via the function $\zeta$, as follows:
+\begin{align}
+\mathbb C^{n+1}\ni (\lambda,z_1,\ldots, z_n)\overset{\zeta}{\mapsto}e^\lambda \begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat} \otimes\cdots\otimes \begin{smallmat} 1 & 0 \\ 0 & e^{z_1}\end{smallmat}
+\end{align}
+A set of vectors $B\subset \mathbb C^{n+1}$ is understood to generate a subspace, denoted $\braket{B}$, in the usual way.
+This subspace corresponds to a group of operators via the function $\zeta$:
+\begin{align}
+\braket{B} \overset{\zeta}{\mapsto} \{\zeta(\vec b) \ |\ \vec b\in \braket{B}\}
+\end{align}
+By abuse of language, we say that a set $B\subset \mathbb C^{n+1}$ generates $\Aut(v,1)$ when $\zeta(\braket{B})=\Aut(v,1)$.
+Hence to ``store'' the (infinite) group $\Aut(v,1)$, it suffices to store a basis of vectors which spans the corresponding subspace of $\mathbb C^{n+1}$.
+This basis is what our algorithm will construct, given a Shannon node $v$.
+
+The function $\zeta$ is a homomorphism from $\braket{B}$ to $\Aut(v,1)$.
+If, instead, we interpret the vector elements as coming from the ring $\mathbb C/2\pi i\mathbb Z$, then the mapping $\zeta$ is an isomorphism, $ (\mathbb C/2\pi i\mathbb Z)^{n+1}\supset \braket{B}\overset{\zeta}{\to} \Aut(v,1)$.
+
+\paragraph{Base case.} The base case is the \textsf{leaf} node of the \textsf{\limdd}.
+It has a trivial automorphism group, containing only the identity element, $\Aut(\textsf{leaf},1)=\{(0)\}$.
+We therefore return the empty set.
+
+\paragraph{Induction case.} Let $v$ be a Shannon node of an $n$-qubit state $\ket{v}$, with $n\geq 1$,
+\begin{align}
+\ket{v} = a\ket{0}\ket{v_0} + b\ket{1}\ket{v_1}
+\end{align}
+Let $B_0$ and $B_1$ be bases for $\braket{B_0}=\Aut(v_0,1)$ and $\braket{B_1}=\Aut(v_1,1)$, respectively.
+If $a=0$ or $b=0$, then we say that $\ket{v_0}$ or, respectively, $\ket{v_1}$, is the all-zero vector, and hence its automorphism group is $\Aut(v_0,1)=\mathbb C^{n}$,
+so a basis for this space is simply the standard basis of $\mathbb C^n$.
+
+To construct a basis for $\Aut(v,1)$, first construct a basis $B_\cap$ for $Aut(v_0,1)\cap \Aut(v_1,1)$ by performing Gaussian on the bases $B_0$ and $B_1$.
+Let $B:=\{(a,z_1,\ldots, z_{n-1},0)|(a,z_1,\ldots, z_{n-1})\in B_\cap\}$.
+
+Next, build sets $C_0$ and $C_1$ such that $B_\cap\cup C_0$ is a basis for $\Aut(v_0,1)$ and $B_\cap\cup C_1$ is a basis for $\Aut(v_1,1)$.
+Let $\vec{s}=(1,0,\ldots, 0)$.
+Use Gaussian elimination to see whether $\vec s\in \braket{B_\cap, C_0,C_1}$.
+%\braket{C_0}\cap \braket{C_1,\vec{s}}$ contains a non-zero vector $\vec{w}$.
+If not, then we return the set $B$ and halt.
+Otherwise, decompose $\vec s$ as $\vec s = \vec s_\cap + \vec s_0+ \vec s_1$.
+Take the vector $\vec s_0$ and append a $1$, obtaining the vector ${\vec s_0}^\prime$.
+Add the new vector ${\vec s_0}^\prime$ to $B$.
+Finally, return the set of vectors $B$ and halt.
+
+
+\subsection{Correctness of isomorphism detection algorithm}
+
+\label{sec:isomorphism-finding-correctness}
+
+In this Section, we give a proof of the correctness of the algorithm in section \autoref{sec:isomorphism-finding-detailed}.
+
+We say that the group $\textsf{Torus}_n$ is the group of operators of the form $\zeta(\vec{b})$ for $b\in (\mathbb C/2\pi i\mathbb Z)^{n+1}$, with $\zeta$ as follows
+\begin{align}
+	\zeta(\lambda,z_1,\ldots, z_n) = e^\lambda\begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat}\otimes\cdots\otimes \begin{smallmat}1 & 0 \\ 0 & e^{z_1}\end{smallmat}
+\end{align}
+Then the torus is the set of linear operators $A$ which act on a basis state $\ket{x}$ as follows,
+\begin{align}
+	A\ket{x_n}\cdots\ket{x_1} = e^{\lambda+\vec x\cdot \vec z}\ket{x}
+\end{align}
+for some vector $\vec z\in \mathbb (C/2\pi \mathbb \mathbb Z)^{n}$ and $\lambda\in (\mathbb C/2\pi i\mathbb Z)$.
+We have
+\begin{align}
+	\zeta(\lambda, z_1,\ldots, z_n, z_{n+1})=\begin{smallmat}1 & 0 \\ 0 & e^{z_{n+1}}\end{smallmat}\otimes \zeta(\lambda, z_1,\ldots, z_n)
+\end{align}
+% todo see if we can refactor lambda into the isomorphism. So A=\lambda A_n...
+\begin{definition}[Preliminaries on morphisms]
+	An \emph{isomorphism} between two vectors $\ket{u}$ and $\ket{v}$ is an operator $A$ of the form $A=A_n\otimes\cdots\otimes A_1$ such that $A\ket{u}=\lambda\ket{v}$ for some $\lambda\in\mathbb C$.
+	If such an operator exists, then $\ket{u}$ is \emph{isomorphic} to $\ket{v}$.
+	If $A\ket{v}=\ket{v}$, then $A$ is an \emph{automorphism} of $\ket{v}$.
+	The sets of isomorphisms and automorphisms are denoted $\Iso(u,v,\lambda)$ and $\Aut(v,\lambda)$, respectively:
+	% todo refactor to \Iso(u,\lambda v)
+	\begin{align}
+		\Iso(u,v,\lambda) = & \{A\ |\ A\ket{u}=\lambda\ket{v}\} \\
+		\Aut(v,\lambda) = & \{A\ |\ A\ket{v}=\lambda\ket{v}\}
+	\end{align}
+\end{definition}
+% todo refactor to \Aut(v,\lambda) = \Iso(v,\lambda v)
+By definition, we have $\Aut(v,\lambda)=\Iso(v,\lambda v)$.
+\begin{lemma}
+	\label{thm:isomorphisms-form-coset}
+	If $\ket{u}$ and $\ket{v}$ are isomorphic the set $\Iso(u,v)$ is a coset of the (multiplicative) group $\Aut(v,1)$.
+	Specifically, if $t\in \Iso(u,\lambda v)$ is any isomorphism, then
+	\begin{align}
+		\Iso(u,v)=t\cdot \Aut(u,1)
+	\end{align}
+\end{lemma}
+\begin{proof}
+	% todo 
+	Choose $t\in \Iso(u,v)$.
+	We wish to show that $\Iso(u,v)=t\cdot \Aut(u,1)$.
+	
+	
+	\textbf{Direction $\Iso(u,v)\supseteq t\cdot \Aut(u,1)$.}
+	Let $a\in \Aut(u,1)$ be any automorphism.
+	We need to show that $ta$ is an isomorphism.
+	To this end,
+	\begin{align}
+		ta\ket{u} = & t\ket{u} & \text{Because }a\in \Aut(u,1) \\
+		=\ket{v} & \text{Because }t\in \Iso(u,v)
+	\end{align}
+	
+	\textbf{Direction $\Iso(u,v)\subseteq t\cdot \Aut(u)$.}
+	To this end, let $k\in \Iso(u,v)$.
+	We need to show that $k\in t\cdot \Aut(u)$, i.e., we need to show that there exists $a\in \Aut(u)$ s.t. $k=t\cdot a$.
+	Choose $a=t^{-1}k$.
+	Since $t$ is an isomorphism from $u$ to $v$, it follows that $t^{-1}$ is an isomorphism from $v$ to $u$.
+	We need to show that the chosen $a$ is indeed an automorphism
+	To this end,
+	\begin{align}
+		a\ket{u} = & t^{-1}k\ket{u} &  \\
+		= & t^{-1}\ket{v} & \text{Because }k\in \Iso(u,v) \\
+		= & \ket{u} & \text{Because }t^{-1}\in \Iso(v,u)
+	\end{align}
+	Since we have $a\ket{u}=\ket{u}$, $a$ is indeed an automorphism of $\ket{u}$, as desired.
+	It follows that $\Iso(u,v)\subseteq t\cdot \Aut(u)$.
+\end{proof}
+\begin{corollary}
+	The set $\Aut(v,\lambda)$ is a coset of $\Aut(v,1)$, for $\lambda\in\mathbb C^\ast$.
+\end{corollary}
+
+In the sequel, we give some lemmas about groups and modules.
+For readers unfamiliar with this notion from algebra, it suffices to think of a module as ``a vector space over $\mathbb R$'', at least for our purposes.
+We recall the following lemma.
+\begin{lemma}
+	\label{thm:coset-intersection}
+	Let $G$ be an additive abelian group and $H_1,H_2$ subgroups, and $\pi,\sigma\in G$.
+	Then either $(\pi+H_1)\cap (\sigma+H_2)=g + (H_1\cap H_2)$ for some $g\in G$, or $(\pi+H_1)\cap (\sigma+H_2)=\emptyset$ is empty.
+\end{lemma}
+\begin{proof}
+	Suppose that $(\pi+H_1)\cap (\sigma+H_2)$ is non-empty, and let $g$ be an element of it.
+	Then $g=\pi+g_1$ and $g=\sigma+g_2$ for some $g_1\in H_2$ and $g_2\in H_2$.
+	Let $h\in H_1\cap H_2$ be any element in the intersection.
+	Then $g+h=\pi + (g_1+h)$, so $\tau+h\in \pi+H_1$.
+	Similarly, since $g+h=\sigma+ (h_2+h)$ we have $h+g\in \sigma+H_2$.
+	It follows that $g+(H_1\cap H_2)\subseteq (\pi+H_1)\cap (\sigma+H_2)$.
+	
+	Conversely, if $q\in (\pi+H_1)\cap (\sigma+H_2)$ is any element, then $q=\pi+q_1$ and $q=\sigma+q_2$.
+	So $(q-g)=(\pi + q_1)-(\pi+g_1)=q_1-g_1\in H_1$, and similarly $q-g=(\sigma+q_2)-(\sigma+g_2)=q_2-g_2\in H_2$, so $q-g\in H_1\cap H_2$, so $q\in g+H_1\cap H_2$.
+	It follows that $(\pi+H_1)\cap (\sigma+H_2)\subseteq g+(H_1\cap H_2)$.
+	Put together, the lemma obtains.
+\end{proof}
+
+In our application, the group $G$ is a vector space.
+In this case, we can give a necessary and sufficient condition for when the set is empty, and if not, we can constructively give an element of it, as follows.
+\todo[inline]{Is it true that $(a+M_0)\cap (b+M_1)$ is non-empty iff $a-b\in \braket{M_0,M_1}$?}
+\begin{lemma}
+	\label{thm:coset-intersection-with-basis}
+	Let $M$ be a vector space, and let $M_0\subseteq M,M_1\subseteq M$ be subspaces, let $a,b\in M$ be elements. For any sets $B_\cap,B_0,B_1,B_\bot$ such that $B_\cap$ is a basis for $M_0\cap M_1$, $B_\cap \cup B_0$ is a basis for $M_0$, $B_\cap\cup B_1$ is a basis for $B_1$ and $B_\cap\cup B_0\cup B_1\cup B_\bot$ is a basis for $M$, we have that $(a+M_0)\cap (b+M_1)$ is empty if and only if $a_\bot\ne b_\bot$, and otherwise $(a+M_0)\cap(b+M_1)=a_1+b_0+a_\bot + (M_0\cap M_1)$.
+\end{lemma}
+\begin{proof}
+	Let $d$ be an element of $(a+M_0)\cap (b+M_1)$, if one exists.
+	Since $d\in a+M_0$, we have $d=a+m^0$ for some $m^0\in M_0$.
+	If we decompose these vectors in the basis $B_\cap,B_0,B_1,B_\bot$, then we get
+	\begin{align}
+		a = & a_\cap + a_0 + a_1 + a_\bot \\
+		m^0=& m_\cap^0 + m_0^0 \\
+	\end{align}
+	This is because $m_1^0=0$ and $m_\bot^0 = 0$, since $m^0\in \braket{B_\cap,B_0}=M_0$.
+	So we have
+	\begin{align}
+		d = d_\cap+ d_0+d_1+d_\bot & (a_\cap + m_\cap^0) + (a_0+m_0^) + a_1+a_\bot
+	\end{align}
+	Since this is a basis, we get that and $d_1=a_1$ and $d_\bot=a_\bot$.
+	By a similar argument, we get that $d_0=b_0$ and $d_\bot=b_\bot$.
+	Hence $d_\bot=a_\bot=b_\bot=d_\bot$.
+	Summarizing, if the set $(a+M_0)\cap (b+M_1)$ is non-empty, then $a_\bot=b_\bot$.
+	
+	Conversely, suppose that $a_\bot=b_\bot$.
+	Then, if $m_\cap$ is any element in $m_\cap \in M_0\cap M_1$, then $d:=m_\cap + a_1+b_0+a_\bot$ is in $(a+M_0)\cap (b+M_1)$.
+	So if $a_\bot=b_\bot$, then the set $(a+M_0)\cap (b+M_1)$ is non-empty.
+	Further, this set has the structure
+	\begin{align}
+		(a+M_0)\cap (b+M_1)=\{g+a_1+b_0+a_\bot\ |\ g\in M_0\cap M_1\}
+	\end{align}
+\end{proof}
+
+\begin{theorem}[Correctness of the Algorithm in \autoref{sec:isomorphism-finding}]
+	The algorithm in \autoref{sec:isomorphism-finding} returns a vector $\pi=(\theta,z_1,\ldots, z_n)\in (\mathbb C/2\pi i\mathbb C)^{n+1}$ such that
+	\begin{align}
+		e^\theta \begin{smallmat} 1 & 0 \\ 0 & e^{z_n}\end{smallmat}\otimes\cdots\otimes \begin{smallmat} 1 & 0 \\ 0 & e^{z_1}\end{smallmat}\ket{u} = \ket{v}
+	\end{align}
+	or returns ``Not isomorphic'' when no such vector exists.
+\end{theorem}
+
+\begin{proof}
+	The proof is by induction on the number $n$ of qubits.
+	\paragraph{Base case.}
+	In the base case, $n=0$, and the nodes in question are both the \textsf{leaf}.
+	The leaf is isomorphic to itself via the isomorphism
+	$1\cdot \ket{\textsf{leaf}} = 1\cdot 1 = 1 = \ket{\textsf{leaf}}$.
+	Hence the algorithm returns the isomorphism $\pi=(0)$, which is correct, as $\zeta(\pi)=e^0=1$
+	
+	\paragraph{Induction case.}
+	Let $u,v$ be two Shannon nodes with
+	\begin{align}
+		\ket{u}=&a\ket{0}\ket{u_0}+b\ket{1}\ket{u_1} \\
+		\ket{v}=&c\ket{0}\ket{v_0}+d\ket{1}\ket{v_1}
+	\end{align}
+	Here $\ket{u},\ket{v}$ are quantum states on $n$ qubits, and $\ket{u_0}$, etc. are quantum states on $n-1$ qubits.
+	
+	If $a\ne c$, then suppose wlog that $a=1$ and $c=0$.
+	Then we have
+	\begin{align}
+		\ket{u}=& \ket{0}\ket{u_0}+b\ket{1}\ket{u_1} \\
+		\ket{v}=& \ket{1}\ket{v_1}
+	\end{align}
+	We can verify that no element $A\in\textsf{Torus}_n$ maps $\ket{u}$ to $\ket{v}$, as follows, say that $A=e^\lambda \begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat}\otimes A^\prime$:
+	\begin{align}
+		A\ket{u} = & e^\lambda \ket{0}A^\prime\ket{u_0} + e^{\lambda+z_n} b\ket{1}A^\prime\ket{u_1} \\
+		A\ket{v} = & e^{\lambda+z_n}\ket{1}A^\prime\ket{v_1}
+	\end{align}
+	Then $A\ket{u}\ne A\ket{v}$, because the upper half of the vector $\ket{v}$ is zero but the upper half of the vector $\ket{u}$ is nonzero.
+	In this case, the algorithm returns ``Not isomorphic'', so it handles this case correctly.
+	
+	If $a=c=1$ and exactly one of $b,d$ is zero, then, say wlog that $b=0$ and $d$ is nonzero, we have
+	\begin{align}
+		\ket{u}=&\ket{0}\ket{u_0} \\
+		\ket{v}=&\ket{0}\ket{v_0} + d\ket{v_1}
+	\end{align}
+	In this case, too, $\ket{u}$ is not isomorphic to $\ket{v}$, by an argument similar to the case above, when $a=1$ and $c=0$.
+	
+	We now treat the three cases that were distinguished in \autoref{sec:isomorphism-finding}.
+	
+	\textbf{Case 1. } Suppose that $a=c=1$ and $b=d=0$.
+	Let $A=\zeta(\lambda, z_1,\ldots, z_n)\in \textsf{Torus}_n$ be any torus element, and let $A^\prime=\zeta(e^\lambda, z_1,\ldots, z_{n-1})$. Then
+	\begin{align}
+		A\ket{u}=&\ket{0}A^\prime \ket{u_0} \\
+		A\ket{v}=&\ket{0}A^\prime\ket{v_0}
+	\end{align}
+	Then $A\ket{u}=A\ket{v}$ if and only $A^\prime\ket{u_0}=A^\prime\ket{v_0}$.
+	In particular, $\ket{u}$ and $\ket{v}$ are isomorphic if and only there exists $A$ such that $A^\prime\ket{u_0}=A^\prime\ket{v_0}$, which is to say: if and only $\ket{u_0}$ and $\ket{v_0}$ are isomorphic.
+	Our algorithm recursively checks whether $\ket{u_0}$ is isomorphic to $\ket{v_0}$, and returns ``Not isomorphic'' if appropriate; otherwise it continues to find an isomorphism.
+	So in this case, the algorithm correctly returns ``Not isomorphic'' iff the vectors are not isomorphic.
+	
+	Suppose $A^\prime$ is such an isomorphism, with $A^\prime\ket{u_0}=\ket{v_0}$.
+	Then $I\otimes A^\prime$ is an isomorphism between $\ket{u}$ and $\ket{v}$.
+	Writing $A^\prime$ as $A^\prime=\zeta(\theta,z_1,\ldots, z_{n-1})$, we see that $A=\zeta(\theta,z_1,\ldots,z_{n-1},0)$ suffices.
+	This is the isomorphism returned by our algorithm, so it correctly returns an isomorphism in this case.
+	The algorithm obtains the vector $(\theta,z_1,\ldots, z_{n-1})$ via a recursive call, where it checked whether $\ket{u_0}$ was isomorphic to $\ket{v_0}$.
+	
+	\textbf{Case 2. } Suppose $a=c=0$, and therefore $b=d=1$.
+	Then
+	\begin{align}
+		\ket{u}=& \ket{1}\ket{u_1} &
+		\ket{v}=& \ket{1}\ket{v_1}
+	\end{align}
+	Similar to Case 1, we see that $\ket{u}$ is isomorphic to $\ket{v}$ if and only if $\ket{u_0}$ is isomorphic to $\ket{v_0}$.
+	The algorithm checks whether $\ket{u_0}$ is isomorphic to $\ket{v_0}$, and returns ``Not isomorphic'' if not, so it correctly decides whether two vectors are isomorphic in this case.
+	
+	Suppose that $\ket{u_0}$ and $\ket{v_0}$ are isomorphic, with $A^\prime\ket{u_0}=e^\theta\ket{v_0}$.
+	Then $I\otimes A^\prime$ is an isomorphism between $\ket{u}$ and $\ket{v}$.
+	The algorithm fetches the vector $(\theta,z_1,\ldots, z_{n-1})$, and returns the vector $(\theta,z_1,\ldots, z_{n-1},0)$, so it correctly returns an isomorphism.
+	
+	\textbf{Case 3. } Suppose $a=c=1$ and $b$ and $d$ are nonzero numbers.
+	First, our algorithm checks whether both $\ket{u_0}\simeq \ket{v_0}$ and $\ket{u_1}\simeq\ket{v_1}$.
+	If either test fails, it returns ``Not isomorphic'', so here we first show that these are both necessary conditions.
+	To this end, let $A=\zeta(\theta,z_1,\ldots, z_n)$ be any isomorphism having $A\ket{u}=\ket{v}$. Then
+	\begin{align}
+		A\ket{u}= &\ket{0}A^\prime\ket{u_0} + be^{z_n}\ket{1}A^\prime\ket{u_1}
+	\end{align}
+	with $A^\prime=\zeta(\theta,z_1,\ldots,z_{n-1})$. Since $A\ket{u}=\ket{v}=\ket{0}\ket{v_0}+d\ket{1}\ket{v_1}$, it follows that
+	\begin{align}
+		A^\prime\ket{u_0}=\ket{v_0}\text{ and }\ket{u_1}=de^{-z_n}/b\ket{v_1}
+	\end{align}
+	In other words, $\ket{u}\simeq\ket{v}$ only if $\ket{u_0}$ is isomorphic to $\ket{v_0}$ and $\ket{u_1}$ is isomorphic to $\ket{v_1}$.
+	
+	Next, suppose that $A^0=\zeta(\pi^0)$ is an isomorphism with $A^0\ket{u_0}=\ket{v_0}$ and $A^1=\zeta(\pi^1)$ is an isomorphism with $A^1\ket{u_1}=\ket{v_1}$.
+	Let $\vec s=(1,0,\ldots, 0)$.
+	The algorithm now obtains sets $C_\cap, C_0,C_1,C_\bot$ such that
+	\begin{align}
+		\zeta(\braket{C_\cap}) = & \Aut(u_0,1)\cap \Aut(u_1,1) \\
+		\zeta(\braket{C_\cap,C_0}) = & \Aut(u_0,1) \\
+		\zeta(\braket{C_\cap,C_1}) = & \Aut(u_1,1) \\
+		\braket{C_\cap,C_0,C_1,C_\bot} = & (\mathbb C/2\pi i\mathbb Z)^{n}
+	\end{align}
+	Decompose the vectors $\pi^0,\pi^1,\vec s$ in the basis $C_\cap,C_0,C_1,C_\bot$, obtaining
+	\begin{align}
+		\pi^0 = & \pi_\cap^0 + \pi_0^0 + \pi_1^0 + \pi_\bot^0 \\
+		\pi^1 = & \pi_\cap^1 + \pi_0^1 + \pi_1^1 + \pi_\bot^1 \\
+		\vec s = & \vec s_\cap + \vec s_0 + \vec s_1+\vec s_\bot
+	\end{align}
+	% todo by which lemma?
+	The algorithm now checks that $\vec s_\bot$ is a multiple of $\pi_\bot^0 - \pi_\bot^1$.
+	Suppose that this holds, and in particular that $\pi_\bot^0=\pi_\bot^1 + \lambda\vec s_\bot$ (we show that this condition is indeed necessary later).
+	Then
+	\begin{align}
+		\Iso(u_0,v_0,1) = & \pi^0 + \Aut(u_0,1) \\
+		= & \pi_\cap^0 + \pi_0^0 + \pi_1^0 + \pi_\bot^0 + \Aut(u_0,1) \\
+		\Iso(u_1,v_1,e^\lambda) = & \lambda \vec s + \Iso(u_1,v_1,1) = \lambda \vec s + \pi^1 + \Aut(u_1,1)
+	\end{align}
+	Now we note that, since $\pi_\cap^0\in \Aut(u_0,1)$ and $\pi_0^0\in \Aut(u_0,1)$, we have
+	\begin{align}
+		\Iso(u_0,v_0,1) = & \pi_1^0 + \pi_\bot^0 + \Aut(u_0,1)
+	\end{align}
+	Similarly, since $\pi_\cap^1\in \Aut(u_1,1)$ and $\pi_1^1\in \Aut(u_1,1)$ and $\vec s_\cap\in \Aut(u_1,1)$ and $\vec s_1\in \Aut(u_1,1)$, we have
+	\begin{align}
+		\Iso(u_1,v_1,1) = & (\pi_0^1 + \lambda\vec s_0) + (\pi_\bot^1 + \lambda \vec s_\bot) + \Aut(u_1,1)
+	\end{align}
+	Since $\pi_\bot^0=\pi_\bot^1 + \lambda\vec s_\bot$, by Lemma \ref{thm:coset-intersection-with-basis} we get
+	\begin{align}
+		& \Iso(u_0,v_0,1)\cap \Iso(u_1,v_1,e^\lambda) \\
+		= & (\pi_0^1 + \lambda\vec s_0) + \pi_1^0 + \pi_\bot^0 + \Aut(u_0,1)\cap \Aut(u_1,1)
+	\end{align}
+	Let $\hat\pi = (\pi_0^1 + \lambda\vec s_0) + \pi_1^0 + \pi_\bot^0$.
+	Then $\hat\pi$ is an isomorphism with 
+	\begin{align}
+		\zeta(\hat\pi) \in \Iso(u_0,v_0,1)\cap \Iso(u_1,v_1,e^\lambda)
+	\end{align}
+	Set $z_n=-\lambda+\log d - \log b$.
+	Then we can make an isomorphism $A=\begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat}\otimes \zeta(\hat\pi)$ with $A\ket{u}=\ket{v}$.
+	Namely,
+	\begin{align}
+		A\ket{u} = & \ket{0}\zeta(\hat\pi)\ket{u_0} + be^{z_n}\ket{1}\zeta(\hat\pi)\ket{u_1} \\
+		= & \ket{0}\ket{v_0} + be^{z_n}\ket{1}e^{\lambda}\ket{v_1} \\
+		= & \ket{1}\ket{v_0} + d\ket{1}\ket{v_1} = \ket{v}
+	\end{align}
+	Since the algorithm returns the vector $\hat\pi$ appended with $z_n$, the isomorhpism that it returns works.
+	
+	% todo make it more seamless that we verify that s in <pi0 - pi1> is a necessary condition.
+	It remains to be shown that $\vec s\in \braket{\pi_\bot^0 - \pi_\bot^1}$ is a necessary condition.
+	To this end, again, let $A=\begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat}\otimes A^\prime$ be an isomorphism with $A\ket{u}=\ket{v}$.
+	Then
+	\begin{align}
+		A\ket{u} = & \ket{0}A^\prime\ket{u_0} + be^{z_n}\ket{1}A^\prime\ket{u_1} \\
+		= & \ket{0}\ket{v_0} + d\ket{1}\ket{v_1}
+	\end{align}
+	Say that $A^\prime=\zeta(\hat\pi)$, so that $\zeta(\hat\pi)\in \Iso(u_0,v_0,1)\cap \Iso(u_1,v_1,de^{-z_n}/b,d)$.
+	Let $\lambda=-z_n+\log d - \log b$.
+	Then $\zeta(\hat\pi - \lambda\vec s)\in \Iso(u_1,v_1,1)$.
+	We can subtract one isomorphism from another to recover an automorphism, as follows:
+	\begin{align}
+		\zeta((\hat\pi - \lambda\vec s) - \pi^1)\in \Aut(u_1,1)
+	\end{align}
+	So in particular, the vector $(\hat\pi - \lambda \vec s)-\pi^1$ has no component along the subspace generated by $C_\bot$, so $\hat\pi_\bot - \lambda\vec s_\bot - \pi_\bot^1=0$, so
+	\begin{align}
+		\label{eq:hat-pi-bot-expression}
+		\hat\pi_\bot = \pi_\bot^1 +\lambda\vec s_\bot
+	\end{align}
+	
+	Moreover, since $\zeta(\pi^0)\in \Iso(u_0,v_0,1)$, we have
+	\begin{align}
+		\zeta(\hat\pi - \pi^0)\in\Aut(u_0,1)
+	\end{align}
+	So the vector $\hat\pi - \pi^0$, too, has no component in the $C_\bot$ subspace, so $\hat\pi_\bot-\pi_\bot^0=0$, so $\hat\pi_\bot=\pi_\bot^0$.
+	Putting this together with \autoref{eq:hat-pi-bot-expression}, we get $\pi_\bot^0 = \pi_\bot^1 + \lambda\vec s$, so $\lambda\vec s=\pi_\bot^0-\pi_\bot^1$, so $\vec s\in \braket{\pi_\bot^0-\pi_\bot^1}$.
+%	, and decompose this into the basis $C_\cap,C_0,C_1,C_\bot$, to obtain
+%	\begin{align}
+%		\hat\pi = \hat\pi_\cap + \hat\pi_0 + \hat\pi_1 + \hat\pi_\bot
+%	\end{align}
+	
+\end{proof}
+
+
+\subsection{Correctness of automorphism construction algorithm}
+
+\begin{theorem}
+	The algorithm in \autoref{sec:construct-automorphism-group} returns a set of vectors $B\subset(\mathbb C/2\pi i\mathbb C)^{n+1}$, such that the function $\zeta$, defined as
+	\begin{align}
+		(\mathbb C/2\pi i\mathbb C)^{n+1}\ni (\theta,z_1,\ldots, z_n) \overset{\zeta}{\mapsto} &e^\theta\begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat}\otimes\cdots\otimes \begin{smallmat} 1 & 0 \\ 0 & e^{z_1}\end{smallmat} \\
+		(\mathbb C/2\pi i\mathbb C)^{n+1}\supset \braket{B}\overset{\zeta}{\to}&\Aut(v,1)
+	\end{align}
+	is an isomorphism between the (additive) group $\braket{B}$ and the (multiplicative) group $\Aut(v,1)$.
+\end{theorem}
+
+\begin{proof}
+	By induction on the number of qubits the Shannon node $v$ represents.
+	For convenience, we define an operator $\odot$ which concatenates two vectors: $(x_1,\ldots, x_k)\odot(y_1,\ldots, y_\ell)=(x_1,\ldots, x_k,y_1,\ldots, y_\ell)$.
+	
+	\paragraph{Base case.}
+	When $n=0$, $v$ is the \textsf{leaf} node.
+	This node has a trivial automorphism group, generated by the empty set.
+	Namely, an automorphism on $0$ qubits is just a scalar $e^\theta\in \mathbb C^\ast$, and we have $e^\theta\cdot 1=1$ if and only if $\theta=0$.
+	Our algorithm returns an empty set, so the base case holds.
+	
+	\paragraph{Induction case.} Let $v$ be a Shannon node on $n\geq 1$ qubits,
+	\begin{align}
+		\ket{v} = c\ket{0}\ket{v_0}+d\ket{1}\ket{v_1}
+	\end{align}
+	The induction argument is in two parts.
+	First, we show that $\braket{B}$ generates each automorphism of $\ket{v}$, showing $\Aut(v,1)\subseteq \braket{B}$.
+	Second, we show that each element of $\braket{B}$ is an automorphism, showing $\braket{B}\subseteq \Aut(v,1)$.
+	
+	% todo rewrite to avoid identifying an operator in Aut with a vector in C^n. Instead, be specific and talk about vectors in C^n (in lower case, perhaps), which correspond to operators A=\zeta(a) in Aut.
+	\textbf{Part 1. } Let $A\in \Aut(v,1)$ be an automorphism of $v$, corresponding to $\vec a\in (\mathbb C/2\pi \mathbb Z)^{n+1}$, in the sense that $A=\zeta(\vec a)$.
+	\begin{align}
+	A = & e^\theta \begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat} \otimes \cdots\otimes\begin{smallmat} 1 & 0 \\ 0 & e^{z_1}\end{smallmat} \\
+	= & \begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat} \otimes A^\prime
+	\end{align}
+	where $A^\prime=e^\theta\begin{smallmat}1 & 0 \\ 0 & e^{z_{n-1}}\end{smallmat}\otimes\cdots\otimes\begin{smallmat}1 & 0 \\ 0 & e^{z_1}\end{smallmat}=\zeta(\vec a^\prime)\in \textsf{Torus}_{n-1}$ is another operator.
+	We will decompose $\vec a$ into the vectors of $B$ that our algorithm constructs.
+	If $z_n=0$, then $A^\prime\in \Aut(v_0,1)\cap \Aut(v_1,1)$, because we have
+	\begin{align}
+		c\ket{0}A^\prime\ket{v_0} + d\ket{1}A^\prime\ket{v_1} = c\ket{0}\ket{v_0}+d\ket{1}\ket{v_1}
+	\end{align}
+	% todo this sentence isn't quite accute: It contains generators of the group Aut cap Aut append (0), which suffices for our purposes.
+	Recall that our algorithm constructs a basis $\braket{B_\cap}$ such that $\zeta\braket{B_\cap}=\Aut(v_0,1)\cap  \Aut(v_1,1)$.
+	Since $A^\prime\in \Aut(v_0,1)\cap \Aut(v_1,1)$, it follows from the induction hypothesis that $\vec a^\prime\in \braket{B_\cap}$.
+	The algorithm adds the vector $\vec b\odot (0)$ to the set $B$, so in particular $\vec a^\prime \odot (0)\in \braket{B}$.
+	Since $A=\zeta(\vec a^\prime\odot (0))$, the claim holds: $B$ generates the automorphism $A$.
+	
+	Otherwise, if $z\ne 0$, then
+	\begin{align}
+		A^\prime\in & \Aut(v_0,1)\cap \Aut(v_1,e^{-z_n}) \\
+		\text{so }\vec a^\prime \in & \braket{B_\cap,C_0}\cap (-z_n\vec s)+\braket{B_\cap, C_1}
+	\end{align}
+	% todo why does the following follow?
+	Since the set $\Aut(v_0,1)\cap \Aut(v_1,e^{-z_n})$ is non-empty, it follows that the vector $\vec s=(1,0,\ldots,0)$ is generated by $\braket{B_\cap,C_0,C_1}$.
+	In that case, our algorithm adds the vector $\vec s_0 \odot(1)$ to $B$.
+	Since $A^\prime\in \braket{B_\cap,B_0}$, it follows that $\vec a^\prime\in \braket{B_\cap, C_0}$, so we decompose $\vec a^\prime$ as $\vec a^\prime = \vec a_\cap^\prime + \vec a_0^\prime$.
+	Also, since $\vec a^\prime\in (-z_n\vec s)+\braket{B_\cap, C_1}$, there is a vector $\vec w\in \braket{B_\cap, C_1}$, with $\vec w = \vec w_\cap + \vec w_1$, such that $\vec a^\prime= -z_n\vec s + \vec w$.
+	Summarizing, we have:
+	\begin{align}
+		\label{eq:a-prime-decomposed-v0}
+		\vec a^\prime  = & \vec a_\cap^\prime + \vec a_0^\prime \\
+		\label{eq:a-prime-decomposed-v1}
+		= & (-z_n\vec s_\cap + \vec w_\cap)  -z_n\vec s_0 +(-z_n\vec s_1 + \vec w_1)
+	\end{align}
+	\autoref{eq:a-prime-decomposed-v0} and \autoref{eq:a-prime-decomposed-v1} together imply $\vec a_0^\prime = -z_n\vec s_0$.
+	So $\vec a^\prime = \vec a_\cap^\prime + -z_n\vec s_0$.
+	We can now write $\vec a$ as $\vec a = (\vec a_\cap^\prime\odot (0)) -z_n(\vec s_0\odot (1))$, so $\vec a$ is a linear combination of vectors in $B$, so we conclude that $\vec a\in \braket{B}$, i.e., the automorhism is generated by $B$.
+	% todo ok, was that argument convincing?
+	
+	\textbf{Part 2. } Now we show that $\braket{B}\subseteq \Aut(v,1)$.
+
+	Let $\vec a=\vec a^\prime \odot (z_n)\in \braket{B}$ be some vector generated by $B$.
+	We will show that $\zeta(\vec a)\in \Aut(v,1)$.
+	If $z_n=0$, then $a^\prime\in \braket{B_\cap}$, and $\zeta(\vec a)=I\otimes \zeta(\vec a^\prime)$.
+	The claim follows immediately:
+	\begin{align}
+		\zeta(\vec a)\ket{v} = & cI\ket{0}\zeta(\vec a^\prime)\ket{v_0}+dI\ket{1}\zeta(\vec a^\prime)\ket{v_1} = \ket{v}
+	\end{align}
+	
+	Otherwise, if $z_n\ne 0$, then we decompose $\vec a$ into the basis $B$ again, obtaining $\vec a=\vec a_\cap \odot 0 + z_n(s_0\odot 1)$, where $\vec a_\cap\in \braket{B_\cap}$.
+	The operator $A$ therefore acts on $\ket{v}$ as follows,
+	\begin{align}
+		A\ket{v} = & \left( \begin{smallmat}1 & 0 \\ 0 & e^{z_n}\end{smallmat}\otimes \zeta(z_n\vec s_0) \right)\cdot \left( I\otimes \zeta(\vec a_\cap^\prime) \right)\left( c\ket{0}\ket{v_0} + d\ket{1}\ket{v_1} \right) \\
+		= & c\ket{0}\zeta(z_n\vec s_0)\zeta(\vec a_\cap^\prime)\ket{v_0} + de^{z_n}\ket{1}\left( z_ns_0 \cdot \vec a_\cap^\prime\right)\ket{v_1} \\
+		= & \ket{0}(z_n\vec s_0)\ket{v_0} + de^{z_n}\ket{1}(z_n\vec s_0)\ket{v_1}
+	\end{align}
+	Now we use the fact that $\vec s_0\in \braket{B_0}$, so $\zeta(\vec s_0)\in \Aut(v_0,1)$, so $\zeta(\vec s_0)\ket{v_0}=\ket{s_0}$,
+	\begin{align}
+		A\ket{v} = & \ket{0}\ket{v_0}+de^{z_n}\ket{1}\zeta(z_n s_0)\ket{1}
+	\end{align}
+	Now we decompose $\vec s$ in the basis $B$, obtaining $\vec s = \vec s_\cap + \vec s_0 + \vec s_1$, and therefore $\vec s_0 = \vec s_\cap + \vec s_1 - \vec s$,
+	\begin{align}
+		A\ket{v}= & c\ket{0}\ket{v_0} + de^{z_n}\ket{1}\zeta(-z_n\vec s + z_n\vec s_1 + z_n\vec s_\cap)\ket{v_1} \\
+		= & c\ket{0}\ket{v_0} + de^{z_n}\ket{1}\zeta(-z_n\vec \vec s)\cdot\zeta(z_n\vec s_\cap + z_n\vec s_1)\ket{v_1} \\
+		= & c\ket{0}\ket{v_0} + de^{z_n}\ket{1}(-z_n\vec s)\ket{v_1} \\
+		= & c\ket{0}\ket{v_0} + dbe^{z_n}\ket{1}e^{-z_n}\ket{v_1} \\
+		= & c\ket{0}\ket{v_0} + d\ket{1}\ket{v_1} = \ket{v}
+	\end{align}
+	We see that $\zeta(\vec a)$ is an automorphism of $\ket{v}$.
+\end{proof}
+
+\subsection{Choosing a canonical isomorphism}
+\label{sec:choose-canonical-isomorphism-R}
+
+We now sketch a short procedure which chooses a canonical isomorphism.
+This procedure takes as input a LIMDD node $v$ with children $v_0$ and $v_1$.
+The label on the $0$-edge to $v_0$ should be $\mathbb I^{\otimes n-1}$; say that the current label on the $1$-edge is the isomorphism $A=\textsf{label}(e_1^v)$.
+The output of the algorithm is a canonical isomorphism $A^\prime$ which we intend to use as the new label on the $1$-edge.
+
+By saying that the algorithm outputs a ``canonical isomorphism,'' we mean that the algorithm outputs the same isomorphism $A^\prime$ on any two nodes $w,v$ whenever $\ket{v}\simeq_G\ket{w}$.
+That is, the algorithm's output is determined only by the isomorphism equivalence class of $\ket{v}$.
+Put differently, the isomorphisms from which we may choose are all the isomorphisms $A^\prime$ such that, if we label the $1$-edge with $A^\prime$, then the resulting node is isomorphic with $\ket{v}$.
+Our strategy will be to first characterize this set in \autoref{thm:eligible-isomorphisms}, finding that it is a hyperplane in $\mathbb R^n$, and then choose the lexicographically minimal element of that set.
+It turns out that every hyperplane in $\mathbb R^n$ has a unique lexicographically minimal element (\autoref{thm:hyperplane-has-lexmin-element}), and that it can be found simply by Gaussian elimination.
+
+
+\begin{lemma}
+	\label{thm:eligible-isomorphisms}
+	Let $E$ be the set of isomorphisms $B$ such that $\ket{0}\ket{v_0}+\ket{1}B\ket{v_1}\simeq\ket{v}$, and let $\vec\delta = (1,0,\ldots,0)$.
+	Then $E$ is a hyperplane in $\mathbb R^n$; specifically, $E=A+\braket{\Aut(\ket{v_0},1),\Aut(\ket{v_1},1),\vec\delta}$.
+\end{lemma}
+\begin{proof}
+	Suppose that $\ket{0}\ket{v_0}+\ket{1}B\ket{v_1}\simeq_G\ket{v}$.
+	Then there is some isomorphism $D=\begin{smallmat}1 & 0 \\ 0 & e^x\end{smallmat}\otimes D^\prime$ such that $\ket{0}\ket{v_0}+\ket{1}B\ket{v_1}=D\ket{v}$.
+	We get
+	\begin{align}
+		B\in E\iff & \ket{0}\ket{v_0}+\ket{1}B\ket{v_1}\simeq \ket{v} \\
+ 		\iff & \exists x,D^\prime\colon \ket{0}\ket{v_0}+\ket{1}B\ket{v_1} = \begin{smallmat} 1 & 0 \\ 0 & e^x\end{smallmat}\otimes D^\prime \left(\ket{0}\ket{v_0}+\ket{1}A\ket{v_1}\right) \\
+		\iff & \exists x,D^\prime\colon \ket{0}D^\prime\ket{v_0}+e^x\ket{1}D^\prime A\ket{v_1} \\
+		\iff & \exists x,D^\prime\colon D^\prime \in \Aut(\ket{v_0},1)\cap \Iso(e^xB\ket{v_1},A\ket{v_1}) \\
+		\iff & \exists x\colon \Aut(\ket{v_0},1)\cap \Iso(e^xB\ket{v_1},A\ket{v_1})\text{ is non-empty} \\
+		\iff & \exists x\colon \Aut(\ket{v_0},1)\cap \left( Ae^{-x}B^{-1}\cdot \Aut(\ket{v_1,1}) \right)\text{ is non-empty}
+	\end{align}
+	The last equality follows from $\Iso(e^xB\ket{v_1},A\ket{v_1})=e^{-x}AB^{-1}\cdot\Aut(\ket{v_1},1)$.
+	Let $\vec\delta = (1,0,\ldots, 0)\in \mathbb R^n$ be the vector which corresponds to the isomorphism $\vec\delta \leftrightarrow e\mathbb I^{\otimes n-1}$.
+	Let $V_0,V_1\subseteq \mathbb R^n$ be spaces which correspond to the automorphism groups $\Aut(\ket{v_0},1)$ and $\Aut(\ket{v_1},1)$, respectively, and let $\vec A,\vec B\in \mathbb R^n$ be the vectors corresponding to the LIMs $A$ and $B$.
+	Then, rephrasing the problem in terms of linear algebra, we get
+	\begin{align}
+		B\in E \iff & \exists x\colon V_0\cap \left( -x\vec\delta +\vec A-\vec B+V_1 \right) \text{is non-empty} \\
+		\iff & \exists x\colon -x\vec \delta + \vec A - \vec B \in \braket{V_0,V_1} \\
+		\iff & \exists x\colon -\vec B\in -\vec A+x\vec \delta + \braket{V_0,V_1} \\
+		\iff & -\vec B\in -\vec A+\braket{V_0,V_1,\vec\delta} \\
+		\iff & \vec B\in \vec A+\braket{V_0,V_1,\vec\delta}
+	\end{align}
+	The second equality holds due to \autoref{thm:coset-intersection-with-basis}.
+	We conclude that $B\in E$ if and only if $B\in A+\braket{V_0,V_1,\vec\delta}$.
+	Therefore $E=A+\braket{V_0,V_1,\vec\delta}$.
+\end{proof}
+
+Hence \autoref{thm:eligible-isomorphisms} shows us that the set $E$ from which we may choose an isomorphism is a hyperplane in $\mathbb R^n$.
+To obtain the canonical isomorphism, we will find the lexicographically minimal element of $E$.
+%\begin{align}
+%	\textsf{min}_{A^\prime}\{A^\prime\ |\ \ket{0}\ket{v_0}+\ket{1}A^\prime\ket{v_1}\simeq_G \ket{0}\ket{v_0}+\ket{1}A\ket{v_1}\}
+%\end{align}
+By lexicographically minimal, we have in mind the following total preorder $\leq$ on vectors in $\mathbb R^n$.
+Let $\delta(x)$ be the function which outputs $0$ when $x=0$ and $1$ otherwise.
+Suppose that $(a_1,\ldots, a_n),b_1,\ldots, b_n)\in \mathbb R^n$ are real vectors.
+Then
+\begin{align}
+	(a_1,\ldots, a_n) \leq (b_1,\ldots, b_n) &\text{ when, for some }k<n,\\
+	& \delta(a_1)=\delta(b_1),\ldots, \delta(a_k)=\delta(b_k),\text{ and } \delta(a_{k+1})=0,\delta(b_{k+1})=1
+\end{align}
+Let us rephrase this in a simpler way.
+To determine which of two vectors is lexicographically smaller, we consider only whether entries are zero or non-zero.
+Then, whichever vector has the first non-zero entry is the larger one.
+%For example, $[0,1,2]\leq [0,0,2]$.
+
+\autoref{alg:get-lexmin-isomorphism} shows that the lexicographically minimal vector can easily be found using Gaussian elimination.
+\begin{algorithm}
+	\caption{An algorithm which, given a matrix $G$ whose columns span $\braket{G}\subseteq \mathbb R^n$, and a vector $\vec x\in \mathbb R^n$, outputs $\textsf{lexmin}(\vec x\cdot \braket{G})$. The procedure is to apply Gaussian elimination to the vector $\vec x$. The input is a $n\times d$ real-valued matrix $G$ and a length-$n$ vector $\vec x\in \mathbb R^n$.}
+	\label{alg:get-lexmin-isomorphism}
+	\begin{algorithmic}[1]
+		\Procedure{GetLexminElement}{$n\times d \text{ matix }G, \vec x=(x_1,\ldots, x_n)\in \mathbb R^n$}
+		\State Reduce $G$ to column echelon form, i.e., to lower triangular form
+		\For{$k=1\ldots d$}
+			\State Let $m$ be the minimum $m$ s.t. $G_{m,k}\ne 0$
+			\If{$\vec x_m\ne 0$}
+				\State $\vec x:=\vec x - (x_m/G_{m,k}) \cdot \vec G_k$
+			\EndIf
+		\EndFor
+		\State \Return $\vec x$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+\begin{theorem}
+	\label{thm:hyperplane-has-lexmin-element}
+	Every hyperplane of $\mathbb R^n$ has a unique lexicographically minimal element.
+\end{theorem}
+\begin{proof}
+	A hyperplane $H\subseteq \mathbb R^n$ can be written as $H=\vec a+V$ for some vector $\vec a$ and a subspace $V\subseteq \mathbb R^n$.
+	Towards a contradiction, suppose that the hyperplane contains two distinct lexicographically minimal elements $\vec x$ and $\vec y$,
+	\begin{align}
+		\vec x=(x_1,\ldots, x_n)\in H & & \vec y = (y_1,\ldots, y_n)\in H
+	\end{align}
+	This means that $\vec x\ne \vec y$, and that $x_i=0\iff y_i=0$, and that there is some non-zero entry where they differ.
+	
+	Let $G$ be a matrix, in column echelon form (i.e., in lower triangular form), whose columns $\vec G_{1},\ldots, \vec G_{d}$ form a basis spanning $\braket{G}=V$.
+	Since $G$ is in lower triangular form, the columns of $G$ are sorted in lexicographic descending order from left to right.
+	For each column, let $m_k$ be the index of the first non-zero entry of the $k$-th column.
+	Recall that, because $G$ is in column echelon form, the $k$-th column is the only column whose $m_k$-th entry is nonzero.
+	Say that $\vec G_k$ is the $k$-th column vector of $G$.
+	
+	First, we will show by contradiction that $x_{m_k}=0$ for all $1\leq k\leq d$.
+	To this end, we observe that, if $x_{m_k}\ne 0$, then we can obtain a lexicographically smaller vector: $\vec x^\prime = \vec x - (\vec x_{m_k}/G_{m_k,k}) \vec G_k$.
+	The vector $\vec x^\prime$ satisfies $\vec x^\prime\in x+\braket{G}=H$, so it is in the hyperplane.
+	Therefore any lexicographically minimal isomorphism has $A_{m_k}=0$ for all $1\leq k\leq d$.
+	By the same argument, the vector $\vec y$ also has $y_{m_k}=0$ for all $k$.
+
+	Let $\vec z=\vec x-\vec y$.
+	Then $\vec z\in V$.
+	This means $\vec z$ is generated by the columns of $G$, so we can write
+	\begin{align}
+		\vec z=\gamma_1 \vec G_{1} + \cdots + \gamma_d \vec G_d
+	\end{align}
+	We have $\vec z\ne 0$, because $A\ne B$ by assumption.
+	Hence at least one of the $\gamma_k$ is nonzero.
+	Since $G$ is in lower triangular form, it follows that the $m_k$-th entry of $\vec z$ is non-zero whenever the $k$-th basis vector contributes a term, i.e., whenever $\gamma_k\ne 0$.
+	In particular, there is some $\hat k$ such that $z_{m_{\hat k}}\ne 0$.
+	
+	On the other hand, since $\vec z$ is the difference between $\vec x$ and $\vec y$, and we have already seen that $x_{m_k}=y_{m_k}=0$, it follows that $C_{m_k}=0$ for all $k$, including $\hat k$.
+	This is the desired contradiction.
+\end{proof}
+
+\begin{corollary}
+	Let $\ket{v}$ and $\ket{w}$ be $n$-qubit states.
+	The isomorphism set $\Iso(\ket{v},\ket{w})$ has a unique lexicographically minimal element.
+\end{corollary}
+\begin{proof}
+	The isomorphism set $\Iso(\ket{v},\ket{w})\subseteq\mathbb R^n$ is a hyperplane in $\mathbb R^n$, so by \autoref{thm:hyperplane-has-lexmin-element}, it has a unique lexicographically minimal element.
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+\todo[inline]{Resolve whether to include the below}
+Here, we give an efficient algorithm for the following task: given two $G$-\limdd s $\ket{\phi}$ and $\ket{\psi}$, where $G$ is the torus,
+\[
+G = 
+\{
+\begin{smallmat}1 & 0 \\ 0 & z\end{smallmat}
+    |
+    z \in \mathbb{C}^*
+\}
+,
+\]
+determine a $G$-LIM $A$ such that $A \ket{\phi} = \ket{\psi}$, or infer that no such $A$ exists.
+
+\todo[inline]{We can quite straightforwardly describe $A$ as the solution to a system of linear equations. This system is produced by recursing over the nodes. Should still write up, but since the torus is much less interesting than the Pauli group for our purposes: should we do so at all, given that the paper is already quite long?}

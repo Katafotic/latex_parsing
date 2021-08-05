@@ -1,0 +1,46 @@
+\subsection{Exponential separation of $\braket{X}$-Isomorphism-QMDD}
+
+In this section, we separate $\braket{X}$-Isomorphism-QMDD from QMDD by giving a quantum state which requires $2^{\Omega(\sqrt{n})}$ as a QMDD, but has an $\braket{X}$-Isomorphism-QMDD with only $\mathcal O(n)$ nodes.
+By $\braket{X}$-Isomorphism-QMDD, we mean that the only isomorphisms that are allowed to appear on the diagram's Isomorphism nodes are of the form $A_1\otimes\cdots\otimes A_n$ where $A_i$ is either $I=\begin{smallmat}1 & 0 \\ 0 & 1\end{smallmat}$ or $X=\begin{smallmat}0 & 1 \\ 1 & 0\end{smallmat}$.
+
+Duris et al. show the following lower bound on the size of nondeterministic branching programs.
+\begin{theorem}[\v{D}uri\v{s} et al.\cite{vdurivs2004multi}]
+	\label{thm:random-vector-space-hard-for-bdd}
+	The characteristic function $f_V$ of a randomly chosen vector space $V$ in $\mathbb F_2^n$ needs a (non-) deterministic branching program of size $2^{\Omega(n)}/(2n)$ with high probability.
+\end{theorem}
+For us, it suffices to use the fact that the bound holds for deterministic branching programs, because it implies the following.
+% this means that the uniform superposition over $A_n$ is a quantum state which has a large QMDD.
+\begin{theorem}
+	For a random vector space $S\subseteq \{0,1\}^n$, the uniform superposition $\ket{S}$ has QMDDs of size $2^{\Omega(n)}/(2n)$, with
+	\begin{align}
+		\ket{S}= \frac{1}{\sqrt{|S|}} \sum_{x\in S}\ket{x}
+	\end{align}
+\end{theorem}
+\begin{proof}[Proof sketch]
+	The idea is that BDDs are QMDDs taking values in $\{0,1\}$.
+	Conversely, whenever the amplitudes of a state $\ket{\phi}$ have values only in $\{0,z\}$ for some $z\in \mathbb C$, then, up to a phase, we have $\ket{\phi}=\ket{S}$, for some set of bitstrings $S\subseteq\{0,1\}^n$.
+	In this case, the QMDD has the same structure as the BDD of the indicator function $f_S$, namely, the weights on its edges are all in $\{0,1\}$, and they have the same number of nodes.
+	By taking $S$ to be a random vector space, the result follows from \autoref{thm:random-vector-space-hard-for-bdd} because all BDDs are branching programs.
+\end{proof}
+
+On the other hand, these states are compactly represented by $\braket{X}$-Isomorphism QMDDs, because they are stabilizer states.
+For context, we note that the theorem proved by \v{D}uri\v{s} et al. is much stronger than what we need.
+Namely, they show that, even if the qubits do not need to be ordered, and even if the diagram is allowed to flip nondeterministic coins, then it still holds that almost all vector spaces have exponential-size diagrams.
+
+\paragraph{Vector spaces and stabilizer states}
+A \emph{vector space} of $\{0,1\}^n$ is a set $S\subseteq\{0,1\}^n$ which contains the bitstring $0\in S$, and is closed under bitwise XOR, i.e., for each $a,b\in S$, it holds that $(a\oplus b)\in S$.
+Each vector space has a basis, and has exactly $2^k$ elements for some $1\leq k\leq n$.
+The uniform superposition over $S$ is the $n$-qubit state $\ket{S}_n$,
+\begin{align}
+	\ket{S}_n =\frac{1}{\sqrt{|S|}} \sum_{x\in S}\ket{x}
+\end{align}
+\begin{theorem}
+If $S$ is a vector space, then $\ket{S}$ is a stabilizer state.
+\end{theorem}
+\begin{proof}
+	For $n=1$, the statement holds trivially.
+	
+	For $n>1$, 
+	
+	(Zelf denk ik dat de volgende route het snelst is: Een vector space bestaat uit de oplossingen van een stelsel lineaire vergelijkingen. Neem de eerste variabele, $x_1$. Dan kan je kijken naar $x_1:=0$ en $x_1:=1$, en dan krijg je weer twee stelsels lineaire vergelijkingen. Maar die zijn "hetzelfde", als ze allebei oplossingen hebben, namelijk de ene krijg je door de oplossingen van de ander te XORen met een slim gevonden bitstring. Deze uitleg is heel slecht).
+\end{proof}

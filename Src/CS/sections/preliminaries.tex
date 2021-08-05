@@ -1,0 +1,237 @@
+\section{Preliminaries: decision diagrams and stabilizer states \label{sec:preliminaries}}
+%\todo[inline]{mention terminology `low' and `high' for 0-edge and 1-edge}
+
+%Here, we briefly introduce two methods to manipulate and succinctly represent quantum states: decision diagrams and stabilizer states.
+%For an introduction to quantum computation, see appendix~\ref{sec:quantum-nutshell}.
+
+The computational unit of quantum computers are quantum bits or qubits.
+A single-qubit state is a complex vector $(\alpha_0, \alpha_1)^{T} \in \mathbb{C}^2$ with norm 1, usually written in Dirac notation as $\alpha_0 \ket{0} + \alpha_1 \ket{1}$.
+Two quantum states which differ only by a complex multiple are considered equal.
+The joint state $\ket{\phi}$ of $n$ quantum bits can be written as 
+\begin{equation}
+    \label{eq:quantum-state-expansion}
+    \sum_{x_1, x_2, \dots, x_n \in \set{0,1}} f(x_1, x_2, \dots, x_n) \ket{x_1}\otimes\ket{x_2}\otimes \dots \otimes\ket{x_n}\vspace{-1em}
+\end{equation}
+for a function $f: \{0, 1\}^n \rightarrow \mathbb{C}$, where $\otimes$ denotes the tensor product.
+An example two-qubit state is $\left( \ket{0} \otimes \ket{0} + i \ket{1} \otimes \ket{1}\right) / \sqrt{2} = \frac{1}{\sqrt{2}} (1,0,0,i)^T$.
+Alternatively to \autoref{eq:quantum-state-expansion}, we can recursively describe an $n$-qubit quantum state $\ket{\phi}$ for $n>1$ as
+\begin{equation}
+\ket{\phi} = \alpha_0 \ket{0} \otimes \ket{\phi_0} + \alpha_1 \ket{1} \otimes \ket{\phi_1}, \text{where $\ket{\phi_0}, \ket{\phi_1}$ are $n$-1-qubit states and $\alpha_0,\alpha_1  \in \mathbb{C}$.}
+    \label{eq:quantum-state-recursive}
+\end{equation}
+An Algebraic Decision Diagram (\add) represents a function of the form $f\colon \{0, 1\}^n \rightarrow \mathbb{C}$, and thus also a quantum state via \autoref{eq:quantum-state-expansion}, see \autoref{fig:qmdd-isoqmdd-exposition} for an example.
+%A succint representation of functions of the form $f\colon \{0, 1\}^n \rightarrow \mathbb{C}$, and thus of quantum states via \autoref{eq:quantum-state-expansion}, has been achieved by the use of Algebraic Decision Diagrams (\adds), see \autoref{fig:qmdd-isoqmdd-exposition} for an example.
+An \add is a rooted directed acyclic graph (DAG), which has a leaf node for each unique value in the image of $f$, i.e., in $\{f(\vec{x}) \mid \vec{x} \in \{0, 1\}^n \}$.
+Each path from the root to a leaf visits nodes representing the variables $x_1, x_2, x_3, x_4$; one variable at each level of the diagram.
+The value $f(x_1, \dots, x_n)$ is found by traversing such a path, following the \concept{low edge} (dashed line)
+ when $x_i=0$, and the  \concept{high edge} (solid line) when $x_i=1$;
+ so, e.g., $f(1,1,1,0) = -i$ in \autoref{fig:qmdd-isoqmdd-exposition}.
+Hence every node in an \add, not only the root node, can be said to represent a function.
+
+%\adds for functions $f$ on length-$n$ bitstrings can be defined recursively on $n$: in case $n=1$, then the \add has a single node with two outgoing edge, labelled $0$ and $1$ and pointing to the leaf node holding the value $f(0)$ and $f(1)$ respectively.
+%If $f(0) = f(1)$, then the \add only has a single leaf node and both edges point to that node.
+%If $n>1$, then and \add for $f$ is constructed by first constructing \adds for the two functions $f_0: (x_2, x_3, \dots, x_n) \mapsto f(0, x_2, x_3, \dots, x_n)$ and $f_1: (x_2, x_3, \dots, x_n) \mapsto f(1, x_2, x_3, \dots, x_n)$.
+%An \add for $f_0$ is then made by adding a fresh node and a $0$-edge ($1$-edge) pointing to the root node of the \add of $f_0$ (the \add of $f_1$).
+%If the \adds of $f_0$ and $f_1$ are identical, then remove one of them and make both edges point to the remaining one.
+%Thus, in an \add, the value $f(x_1, \dots, x_n)$ is found by traversing the path $x_1 \rightarrow x_2 \rightarrow \dots \rightarrow x_n$, e.g. $f(1,1,0) = -1/\sqrt{2}$ in \autoref{fig:add-qmdd-example}.
+%Although generally, functions $f: \{0, 1\}^n \rightarrow \mathbb{C}$ have exponentially many partial assignments, many functions encountered in practice have only a polynomial number of unique subfunctions, and therefore can be represented by polynomial-size \add.
+
+A \emph{partial assignment} $(x_1=a_1,\ldots, x_k=a_k)$ to the variables induces a \emph{subfunction} $f_a$, defined as $f_a(x_{k+1},\ldots, x_n)\defn f(a_1,\ldots, a_k,x_{k+1},\ldots, x_n)$.
+Two \add nodes representing the same subfunction can be \emph{merged}, i.e., one node is deleted and its incident edges are rerouted to the other.
+When all eligible nodes have been merged, an \add is \emph{reduced}.
+The nodes of a reduced \add are in one-to-one correspondence with the unique \emph{subfunctions} of $f$.
+An \add is a \emph{canonical} representation: a given function has exactly one reduced \add.
+\adds can represent both states and matrices, and there are algorithms which multiply a matrix with a vector in \add form.
+An \add can represent any quantum state, using exponentially many nodes in the worst case.
+A given quantum gate can be compiled into an \add, thus allowing one to simulate any quantum circuit by repeatedly multiplying a gate's matrix with a state. %\todo[inline]{@Lieuwe: David asks for ref here}
+%For example, the functions $(x_2, x_2, \dots, x_n) \mapsto f(0, x_2, x_3, \dots, x_n)$ and $(x_4, x_5, \dots, x_n) \mapsto f(0, 1, 1, x_4, x_5, \dots, x_n)$ are subfunctions of $f$.
+%At a node in an \add corresponding to the $k$-th variable, the two outgoing arrows correspond to the partial assignments $x_k=0$ and $x_k=1$.
+
+The Quantum Multi-valued Decision Diagram (\qmdd) \cite{miller2006qmdd} improves on the \add representation by also merging two nodes when they represent functions $f,g$ that are related by $f=\lambda\cdot g$ for some $\lambda\in\mathbb C^{\ast}$.
+\autoref{fig:qmdd-isoqmdd-exposition} gives an example.
+Each edge is labelled with a weight. % (the normalization constant $\lambda$).%$^{\ref{fn:norm}}$
+To read a value of $f$, traverse the \qmdd from the root to the leaf just as in an \add, and multiply the weights of all edges on that path.
+Like \adds, \qmdds are a canonical representation and can be used to simulate any quantum circuit.
+
+The single-qubit Pauli operators are
+$2\times 2$ unitary matrices:
+\begin{equation*}
+\id[2] \defn \begin{pmatrix} 1 & 0\\ 0 & 1 \end{pmatrix},
+X \defn \begin{pmatrix} 0 & 1\\ 1 & 0 \end{pmatrix},
+Y \defn \begin{pmatrix} 0 & -i\\ i & 0 \end{pmatrix},
+Z \defn \begin{pmatrix} 1 & 0\\ 0 & -1 \end{pmatrix}
+\label{eq:pauli-matrices}
+\end{equation*}
+where $i$ is the complex unit.
+An $n$-qubit operator of the form $P_n\otimes\cdots\otimes P_1$ is called a \emph{Pauli string} if $P_j$ are single-qubit Pauli operators.
+The $n$-qubit Pauli strings generate a nonabelian group $\Pauli_n$ (under matrix multiplication), consisting of all operators of the form $\lambda P_n\otimes\cdots\otimes P_1$ with $\lambda \in \{\pm 1, \pm i\}$.
+Note that the high indices are on the left, in keeping with the custom that the least significant (qu)bit is the first qubit, and the leftmost operator $P_n$ acts on the most significant qubit. 
+Pauli operators $A, B$ either commute ($A\cdot B = B\cdot A$) or anticommute ($A \cdot B = - B \cdot A$).
+
+In contrast to decision diagrams, the stabilizer formalism forms a subset of quantum computation that is efficiently simulatable.
+A stabilizer state on $n$ qubits can be prepared from the state $\ket{0}^{\otimes n}$ by repeatedly applying any of the following gates (generators of the Clifford set):
+\begin{equation}
+    H \defn 
+        \frac{1}{\sqrt{2}}
+        \begin{pmatrix} 1 & 1\\ 1 & -1 \end{pmatrix}
+            ,
+        S
+        \defn
+        \begin{pmatrix} 1 & 0\\ 0 & i \end{pmatrix},
+            \textnormal{CNOT} \defn 
+        \begin{pmatrix}
+            1 & 0 & 0 & 0\\
+            0 & 1 & 0 & 0\\
+            0 & 0 & 0 & 1\\
+            0 & 0 & 1 & 0
+        \end{pmatrix}.
+        \label{eq:clifford-generators}
+\end{equation}
+There exist $2^{\Theta(n^2)}$ stabilizer states on $n$ qubits \cite{aaronson2008improved}; examples are $\ket{00}$ and $(\ket{00} + \ket{11}) / \sqrt{2}$.
+A strict subset of stabilizer states is the set of graph states \cite{hein2006entanglement}.
+The relationship between graph states and stabilizer states has been extensively investigated in, e.g., \cite{nest2004graphical,nest2005local}
+%\todo{Move to S4.1?}
+For an undirected graph $G=(V,E)$, the graph state $\ket{G}$ is the following state on $n$ qubits, where $Z_{jk}$ denotes the controlled $Z$-gate between qubits $j$ and $k$.
+\begin{equation}
+    \frac{1}{\sqrt{2}^n} \prod_{(j, k) \in E} Z_{jk} \left(\ket{0} + \ket{1}\right)^{\otimes n}, \text{ where e.g. }
+        Z_{1,2} = 
+        \begin{pmatrix}
+            1 & 0 & 0 & 0\\
+            0 & 1 & 0 & 0\\
+            0 & 0 & 1 & 0\\
+            0 & 0 & 0 & -1
+        \end{pmatrix} \text{ for } n=2.
+	\label{eq:graph-state-definition}
+\end{equation}
+%Although not every stabilizer state is a graph state, any stabilizer state can be converted into one by local Cliffords (LC)~\cite{nest2004graphical}.
+%Moreover, since LC-equivalence between two graphs is efficient~\cite{nest2005local}, so is LC-equivalence between stabilizer states.\todo{Tim: Vedran mentioned this and I added it here, but I am not so sure this is the right place to mention this... All Paulis are CLiffords so checking local-Pauli equivalence is easy for stabilizer states, but we consider arbitrary states...}
+An $n$-qubit stabilizer state $\ket{\phi}$ is uniquely specified by the set $S$ of Pauli operators $A \in \Pauli_n$ for which $A\ket{\phi} = \ket{\phi}$.
+This set $S$ is an abelian group of $2^n$ elements, succinctly represented by $n$ independent generators.
+Since each Pauli generator takes $\mathcal{O}(n)$ space to represent, an $n$-qubit stabilizer is represented by $\mathcal O(n^2)$ bits.
+Updating the stabilizer generating set after application of one of the gates from eq.~\eqref{eq:clifford-generators} or a single-qubit computational-basis measurement can be done in polynomial time \cite{gottesman1998heisenberg}.
+Also, we note that multiplying two $n$-qubit Pauli strings can be done in $O(n)$ time by using the property of the tensor product $\otimes$ that $(a\otimes b) \cdot (c\otimes d) = (a\cdot c) \otimes (b\cdot d)$.
+
+Stabilizer-rank based methods~\cite{bravyi2016trading,bravyi2017improved,bravyi2019simulation, huang2019approximate,kocia2018stationary,kocia2020improved} extend this approach to families of Clifford circuits with arbitrary input states $\ket{\phi_n}$, enabling the simulation of universal quantum computation in general~\cite{bravyi2005universal}.
+By decomposing $\ket{\phi_n}$ as linear combination of $\chi$ stabilizer states, the measurement outcome probabilities can be computed in time $\oh(\chi \cdot \textnormal{poly}(n))$, where the least $\chi$ is referred to as the \concept{stabilizer rank}.
+Therefore, stabilizer-rank based methods are efficient for a family of input states $\ket{\phi_n}$ with a stabilizer rank polynomially growing~in~$n$.
+
+In this work we will also consider stabilizer groups of states which are not stabilizer states.
+In general, we will refer to an abelian subgroup of $\Pauli_n$, not containing $-\id[2]^{\otimes n}$, as an $n$-qubit \emph{stabilizer subgroup}, which generally has $\leq n$ generators.
+Such objects are also studied in the context of simulating mixed states \cite{audenaert2005entanglement} and quantum error correction~\cite{gottesman1997stabilizer}.
+Examples of stabilizer subgroups are $\{\id[2]\}$ for $\ket{0} + e^{i\pi/4}\ket{1}$, $\langle -Z\rangle$ for $\ket{1}$ and $\langle X \otimes X\rangle$ for $(\ket{00} + \ket{11}) + 2(\ket{01} + \ket{10})$.
+
+Any $n$-qubit Pauli string can (modulo factor $\in \{\pm 1, \pm i\}$) be written as $(X^{x_n} Z^{z_n}) \otimes \dots \otimes (X^{x_1} Z^{z_1})$ for bits $x_j, z_j, 1 \leq j \leq n$.
+We can therefore write an $n$-qubit Pauli string $P$ as length-$2n$ binary vector 
+\[
+    (\underbrace{x_n, x_{n-1}, \dots x_1}_{\textnormal{X block}} | \underbrace{z_n, z_{n-1}, \dots, z_1}_{\textnormal{Z block}})
+    ,
+\] 
+where we added the horizontal bar ($|$) only to guide the eye.
+We will refer to such vectors as \emph{check vectors}.
+For example $X \sim (1, 0)$ and $Z \otimes Y \sim (0, 1 | 1, 1)$ \cite{aaronson2008improved}.
+A set of $k$ Pauli strings thus can be written as $2n\times k$ binary matrix, often called \emph{check matrix}, e.g.
+\[
+    \begin{pmatrix}
+        X &\otimes& X &\otimes& X\\
+        \id[2] &\otimes& Z &\otimes& Y
+    \end{pmatrix}
+    \sim
+    \begin{pmatrix}
+        1& 1& 1& |& 0& 0& 0\\
+        0& 0& 1& |& 0& 1& 1
+    \end{pmatrix}
+    .
+\]
+This equivalence induces an ordering on Pauli strings following the lexicographic ordering on bit strings. %, defined as $\vec{y} \leq \vec{z}$ if either $\vec{y} = \vec{z}$ or else if $\vec{y}$ $\vec{z}$ agree on the first $k$ elements but $\vec{y}_{k+1} < \vec{z}_{k+1}$, where $0<1$.
+For example, $X<Y$ because $(1|0) < (1|1)$ and $Z\otimes \id[2] < Z \otimes X$ because $(0 0 | 1 0) < (0 1 | 1 0)$.
+Furthermore, if $P, Q$ are Pauli strings corresponding to binary vectors $\vec{x}^P, \vec{z}^P$ and $\vec{x}^Q, \vec{z}^Q$, then 
+\[
+P \cdot Q \propto
+\bigotimes_{j=1}^n
+\left(X^{x^P_j} Z^{z^P_j}\right) \left(X^{x^Q_j} Z^{z^Q_j}\right) 
+=
+\bigotimes_{j=1}^n
+\left(X^{x^P_j \oplus x^Q_j } Z^{z^P_j \oplus z^Q_j} \right)
+\]
+and therefore the group of $n$-qubit Pauli strings with multiplication (disregarding factors) is group isomorphic to the vector space $\{0, 1\}^{2n}$ with bitwise addition (i.e., exclusive or; `xor').
+Consequently, many efficient algorithms for linear-algebra problems carry over to sets of Pauli strings.
+In particular, if $G = \{g_1, \dots, g_k\}$ are length$-2n$ binary vectors (/ $n$-qubit Pauli strings) with $k\leq n$, then we can efficiently perform the following operations.
+\begin{description}
+%    \item[\emph{Orthogonalization:}] convert $G$ to a (potentially smaller) independent set, using the Gram-Schmidt procedure, in $O(n^3)$ time.
+    \item[\emph{RREF:}] bring $G$ into a reduced-row echelon form (RREF) using Gauss-Jordan elimination (both standard linear algebra notions) where each row (in check matrix form) has strictly more leading zeroes than the row above.
+        The RREF is achievable by $O(k^2)$ row additions (/~multiplications modulo factor) and thus $O(k^2 \cdot n)$ time (see \cite{berg2020circuit} for a similar algorithm).
+        In the RREF, the first $1$ after the leading zeroes in a row is called a `pivot'.
+    \item[\emph{Independent Set}] convert $G$ to a (potentially smaller) independent set by performing the RREF procedure and discarding resulting all-zero rows.
+    \item[\emph{Membership:}] determining whether a given a vector (/~Pauli string) $h$ has a decomposition in elements of $G$.
+        This task can be reduced to independence by first getting $G^{\textnormal{RREF}}$ by applying RREF, followed by adding $h$ to $G$ and performing the Independent-Set procedure. The result has $|G^{\textnormal{RREF}}|$ rows if $h\in \langle G\rangle$, and $|G^{\textnormal{RREF}}| + 1$ rows otherwise.
+    \item[\emph{Intersection:}] determine all Pauli strings which, modulo a factor, are contained in both $G_A$ and $G_B$, where $G_A, G_B$ are generator sets for $n$-qubit stabilizer subgroups.
+        This can be achieved using the Zassenhaus algorithm \cite{LUKS1997335} in time $O(n^3)$.
+    \item[\emph{Division remainder:}] given a vector $h$  (/~Pauli string $h$), determine \mbox{$ h^{\textnormal{rem}} := \min_{g\in \langle G\rangle} \{ g  h\}$} (minimum in the lexicographic ordering) where $\oplus$ denotes bitwise XOR (/~factor-discarding multiplication).
+        We do so in the check matrix picture by bringing $G$ into RREF, and then making the check vector of $h$ contain as many zeroes as possible by adding rows from $G$:
+	\begin{algorithmic}[1]
+        \For{column index $j=1$ to $2n$}
+        \If{$h_j = 1$ and $G$ has a row $g_i$ with its pivot at position $j$}
+		$h := h \oplus g_i$
+        \EndIf
+        \EndFor
+	\end{algorithmic}
+        The resulting  $h$ is $h^{\textnormal{rem}}$.
+This algorithm's runtime is dominated by the RREF step; $O(n^3)$.
+        %\todo{It is hard to follow. An example might help. Perhaps indeed explain where you need it?}
+%        \todo[inline]{Tim: this algorithm is obvious but I have not been able to find a reference.... Need to move to elsewhere?}
+% AL: I like this overview. If it is trivial let's leave it here. People might still refer to it, and we avoid claiming trivial stuff.
+\end{description}
+
+In this work, we will consider the group of $n$-qubit Pauli operators $\lambda P_n \otimes \dots P_n$ for arbitrary $\lambda \in \mathbb{C}-\{0\}$, denoted as $\paulilim_n$.
+Since each stabilizer $\lambda P \in \paulilim_n$ has factor $\lambda =\pm 1$ (follows from
+$ (\lambda P)\ket{\phi} = (\lambda P)^2 \ket{\phi} =  \lambda^2 \id \ket{\phi}  =\ket{\phi}$, hence $\lambda^2 = 1$), the stabilizer subgroups in $\paulilim_n$ are the same as in $\pauli_n$.
+As extension of the check matrix form to $A \in \paulilim_n$, we write $A = r \cdot e^{i\theta} \cdot P_n \otimes ...\otimes P_1$, for $r \in \mathbb{R}_{> 0}$ and $\theta\in [0, 2\pi)$ and represent $A$ by a length-$(2n+2)$ vector where the last entries store $r$ and $\theta$, e.g.:
+\[
+    \begin{pmatrix}
+        3X &\otimes& X &\otimes& X\\
+        -\frac{1}{2} i\id[2] &\otimes& Z &\otimes& Y
+    \end{pmatrix}
+    \sim
+    \begin{pmatrix}
+        1& 1& 1& |& 0& 0& 0& |&3 & 0\\
+        0& 0& 1& |& 0& 1& 1& |&\frac{1}{2} & \frac{3\pi}{2}
+    \end{pmatrix}
+\]
+where we used $3 = 3\cdot e^{i\cdot 0}$ and $-\frac{1}{2}i = \frac{1}{2} \cdot e^{3\pi i/2}$.
+The ordering on real numbers induces a lexicographic ordering (from left to right) on such extended check vectors, for example $(1, 1, | 0, 0 | 3, \frac{1}{2} ) < (1, 1 | 1, 0 | 2, 0)$.
+Let us stress that the factor encoding $(r, \theta)$ is less significant than the Pauli string encoding $(x_n, \dots, x_1 | z_n, \dots, z_1)$.
+As a consequence, we can greedily determine the minimum of two Pauli operators.
+%We state this remark separately because we will explicitly use it for proving correctness of our algorithms in~\autoref{sec:choose-canonical-isomorphism-pauli}--\ref{sec:pauli-isomorphism-detection}.
+
+%\def\rp{r}
+%\def\thetap{\theta}
+%\def\rq{r'}
+%\def\thetaq{\theta'}
+%\begin{remark}
+%    \label{remark:ordering}
+%    Checking which of two Pauli operators $\rp e^{i\thetap} P, \rq e^{i\thetaq} P' \in \paulilim_n$ is smaller can be performed in two greedy steps: first, declare $\rp e^{i\thetap} P <  \rq e^{i\thetaq} P'$ if $P < P'$.
+%    Otherwise (i.e., if $P = P'$), then proceed to comparing the factors and declare $\rp e^{i\thetap} P <  \rq e^{i\thetaq} P'$ if and only if $(\rp, \thetap) < (\rq, \thetaq)$.
+%\end{remark}
+
+Finally, we emphasize that the algorithms above rely on row addition, which is a commutative operation.
+%are correct because Pauli operators with factor-ignoring multiplication are group isomorphic to binary vectors with xor.
+Since conventional (i.e., factor-respecting) multiplication of Pauli operators is not commutative, the algorithms above are not straightforwardly applicable to (nonabelian subgroups of) $\paulilim_n$.
+(For abelian subgroups of $\paulilim_n$, such as stabilizer subgroups \cite{aaronson2008improved}, the algorithms still do work.)
+Fortunately, since Pauli strings either commute or anti-commute, row addition may only yield an factors up to the $\pm$ sign, not the resulting Pauli strings.
+This feature, combined with the stipulated order assigning least significance to the factor,
+enables us to invoke the algorithms above as subroutine, with postpocessing to obtain the correct factor.
+We will do so in~\autoref{sec:choose-canonical-isomorphism-pauli}--\ref{sec:pauli-isomorphism-detection}.
+%
+%
+%, which may yield incorrect output (for example, the intersection of $\langle Z \rangle$ and $\langle -Z \rangle$ is $\{\id[2]\}$, while if we discard scalars, the Intersection algorithm above would also return $Z$ as element in the intersection).
+%However, because $\paulilim_n$ with factor-respecting multiplication is a non-abelian group while row addition is, there is no commutative row addition operation that preserves factors in the Pauli picture.
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,519 @@
+\section{How to write graph states, XOR-states and stabilizer states as Tower-\limdds}
+\label{sec:graph-states-limdds}
+\label{sec:proof-stabilizer-states-tower-limdds}
+%\todo[inline]{Tim: should add `semi-reduced' to all three theorems? (even though this is only properly defined in the context of Pauli-\limdds?)}
+%\todo[inline]{Tim: not yet made domain notation correct, e.g. make all Pauli strings represented by $P, Q$, etc.}
+
+In this appendix, we prove that the families of $\langle Z\rangle$-, 
+$\langle X\rangle$-, and Pauli-Tower-\limdds correspond to graph states, XOR states (see \autoref{def:xor-states} below), and stabilizer states, respectively, in \autoref{thm:graph-states-z-limdd}, \autoref{lemma:vector-space-x-limdd} and \autoref{thm:pauli-tower-limdds-are-stabilizer-states} below.
+\autoref{def:reduced-limdd} for reduced \Pauli-\limdds also holds when exchanging \Pauli{} with $\bracket{X}$. However, it does not work for $\bracket{Z}$ by \ref{obs:subgroups}. Note however, that our proofs do not rely on the reduced definition, but on \autoref{def:limdd}.
+
+
+
+We recall that a Tower-\limdd representing an $n$-qubit state is a \limdd which has, besides the leaf, $n$ nodes.
+%Graph states and XOR states are stabilizer states, so they can be succintly represented by a generating set of their stabilizer groups.
+%Our proofs are constructive: given the generating set for a graph state/XOR state/stabilizer state, we construct the state's $\langle Z \rangle$-/$\langle X\rangle$-/$\Pauli$-Tower-\limdds in polynomial time in the number of qubits.
+
+\begin{proposition}[Graph states are $\langle Z\rangle$-Tower-\limdds]
+    \label{thm:graph-states-z-limdd}
+    Let $n\geq 1$.
+    Denote by $\mathcal{G}_n$ the set of $n$-qubit graph states and write $\mathcal{Z}_n$ for the set of $n$-qubit quantum states which are represented by Tower-\limdds which low-edge-labels $\id$ and high-edge labels $\lambda \bigotimes_j P_j$ with $P_j \in \{\id[2], Z\}$ and $\lambda \in \{0, 1\}$.
+    Then $\mathcal{G}_n = \mathcal{Z}_n$.
+\end{proposition}
+\begin{proof}
+    We establish $\mathcal{G}_n \subseteq \mathcal{Z}_n$ by providing a procedure to convert any graph state in $\mathcal{G}_n$ to a reduced Tower-\limdd in $\mathcal{Z}_n$.
+See \autoref{fig:graph-state-as-line-iso-qmdd} for an example of a $4$-qubit graph state.
+    For $n=1$, we note that there is only one single-qubit graph state by definition (see \autoref{eq:graph-state-definition}), which is \mbox{$\ket{+} := (\ket{0} + \ket{1}) / \sqrt{2}$} and can be represented as \limdd by a single node (in addition to the leaf node): see \autoref{fig:graph-state-as-line-iso-qmdd}(a).
+For the inductive step, we consider an $(n+1)$-qubit graph state $\ket{G}$ corresponding to the graph~$G$.
+We isolate the $(n+1)$-th qubit by decomposing the full state definition from  \autoref{eq:graph-state-definition} according to \autoref{eq:quantum-state-recursive}:
+	\begin{equation}
+	% Overweeg: 
+        \ket{G} = 
+        \frac{1}{\sqrt{2}}\left(\ket{0} \otimes \ket{G_{1..n}} + \ket{1} \otimes 
+            \underset{\textnormal{Isomorphism B}}{ \underbrace{
+\left[
+            \bigotimes_{(n+1,j)\in E} Z_j
+            \right] 
+            }}
+        \ket{G_{1..n}}\right)
+		\label{eq:graph-state-induction}
+	\end{equation}
+where $E$ is the edge set of $G$ and $G_{1..n}$ is the induced subgraph of $G$ on vertices $1$ to $n$.
+Thus, $\ket{G_{1..n}}$ is an $n$-qubit graph state on qubits 1 to $n$.
+% Can be represented as <<a>> line-like \limdd
+    Since $\ket{G_{1..n}}$ is a graph state on $n$ qubits, by the induction hypothesis, we have a procedure to convert it to a Tower-\limdd $\in \mathcal{Z}_{n-1}$.
+Now we construct a Tower-\limdd for $\ket{G}$ as follows.
+The root node has two outgoing edges, both going to the node representing $\ket{G_{1.. n}}$.
+    The node's low edge is labeled with $\mathbb I$, and the node's high edge is labeled $B=0$ if the $(n+1)$-th qubit is isolated, and otherwise with 
+\begin{align}
+	B = \bigotimes_{(n+1,j)\in E}Z_j
+\end{align}
+Thus the root node represents the state $\ket{0}\ket{G_{1..n}}+\ket{1}B\ket{G_{1..n}}$, satisfying \autoref{eq:graph-state-induction}.
+\begin{figure*}
+    \begin{centering}
+    \includegraphics[width=1.0\textwidth]{pics/graph-state-construction.pdf}
+	\caption{
+		Construction of the Tower-\limdd for the 4-qubit grid graph state, by iterating over the number of vertices in the graph.
+    (a) First, we consider the single-qubit graph state, which corresponds to a the subgraph containing only vertex $A$.
+    (b) Then, we add vertex $B$, which is connected to $A$ by an edge.
+	The resulting \limdd is constructed from the \limdd from (a) by adding a new root node and an isomorphism node.
+	The isomorphism is $\unit_A \otimes Z_B$, since vertex $C$ is connected to vertex $B$ (yielding the $Z$ operator) but not to $A$ (yielding the identity operator $\unit$).
+    This process is repeated for a third vertex $C$ (c) until we reach the \limdd of the full 4-qubit grid graph state (d).
+	For comparison, (e) depicts a regular QMDD for the same graph state, which has width 4 instead of 2 for the \limdd.
+		\label{fig:graph-state-as-line-iso-qmdd}
+		}
+    \end{centering}
+\end{figure*}
+
+
+    To prove $\mathcal{Z}_n \subseteq \mathcal{G}_n$, consider the fact that the reverse algorithm is simply the interpretation of the resulting root node $\ket v$ (see semantics in \autoref{def:limdd}).
+A simple counting argument based on the above construction shows that $\sizeof{\mathcal{Z}_n} = \sizeof{\mathcal{G}_n} = 2^{n \choose 2}$, so the conversion is indeed a bijection.
+\end{proof}
+
+
+We now define ``XOR-states'' and prove that they are represented exactly by Tower-$\braket{X}$-\limdds.
+
+\begin{definition}[XOR-state]
+	\label{def:xor-states}
+	Let $S\subseteq\{0,1\}^n$ be a vector space, i.e., for every $x,y\in S$ it holds that $x\oplus y\in S$.
+	Then the XOR-state $\ket{S}$ is the uniform superposition over elements of $S$, i.e.,
+	\begin{align}
+		\ket{S}=\frac{1}{\sqrt{|S|}}\sum_{x\in S}\ket x
+	\end{align}
+\end{definition}
+
+\begin{proposition}[XOR-states are $\langle X\rangle$-Tower-\limdds]
+    \label{lemma:vector-space-x-limdd}
+    Let $n\geq 1$.
+    Denote by $\mathcal{V}_n$ the set of $n$-qubit XOR states and write $\mathcal{X}_n$ for the set of $n$-qubit quantum states which are represented by Tower-\limdds with low edge labels $\id$ and high edge labels $\lambda \bigotimes_j P_j$ with $P_j \in \{\mathbb I, X\}$ and $\lambda \in \{0, 1\}$.
+    Then $\mathcal{V}_n = \mathcal{X}_n$.
+\end{proposition}
+\begin{proof}
+    We prove $\mathcal{V}_n \subseteq \mathcal{X}_n$ by providing a procedure for constructing a Tower-\limdd for an XOR-state.
+    The procedure is recursive on the number of qubits.
+
+	\textbf{Base case: $n=1$.} In this case, there are two XOR states: $\ket{0}$ and $(\ket{0} + \ket{1}) / \sqrt{2}$, which are represented by a single node which has a low and high edge pointing to the leaf node with low/high edge labels 1/0 and 1/1, respectively.
+	
+	\textbf{Induction case. }Now consider an $(n+1)$-qubit XOR state $\ket{S}$ for a vector space $S\subseteq \{0,1\}^{n+1}$ for some $n\geq 1$ and assume we have a procedure to convert any $n$-qubit XOR state into a Tower-\limdd~in~$ \mathcal{X}_n$. 
+We consider two cases, depending on whether the first bit of each element of $S$ is zero:
+    \begin{enumerate}[(a)]
+        \item{
+                The first bit of each element of $S$ is $0$.
+                Thus, we can write $S = \{0x \mid  x \in S_0\}$ for some set $S_0\subseteq\{0, 1\}^n$.
+            Then $0a,0b\in S \implies 0a\oplus 0b\in S$ implies $a,b\in S_0 \implies a\oplus b\in S_0$ and thus $S_0$ is an length-$n$ bit string vector space.
+            Thus by assumption, we have a procedure to convert it to a Tower-\limdd in $\mathcal{X}_n$.
+            Convert it into a Tower-\limdd in $\mathcal{X}_{n+1}$ for $\ket{S}$ by adding a fresh node on top with low edge label $\id[2]^{\otimes n}$ and high edge label $0$, both pointing to the the root $S$.
+            }
+         \item{
+                 There is some length-$n$ bit string $u$ such that $1u\in S$.
+                 Write $S$ as the union of the sets $\{0x \mid x \in S_0\}$ and $\{1x \mid x\in S_1\}$ for sets $S_0, S_1 \subseteq \{0,1\}^n$.
+                 Since $S$ is closed under element-wise XOR, we have $1u \oplus 1x = 0(u\oplus x) \in S$ for each $x\in S_1$ and therefore $u\oplus x \in S_0$ for each $x \in S_1$.
+                 This implies that $S_1 = \{u\oplus x\mid x\in S_0\}$ and thus $S$ is the union of $\{0x \mid  x \in S_0\}$ and $\{1u \oplus 0x\mid x\in S_0\}$.
+                 By similar reasoning as in case (a), we can show that $S_0$ is a vector space on length-$n$ bit strings.
+                 
+                 We build a Tower-\limdd for $\ket S$ as follows.
+                 By the induction hypothesis, there is a Tower-\limdd with root node $v$ which represents $\ket{v}=\ket{S_0}$.
+                 We construct a new node whose two outgoing edges both go to this node $v$.
+                 Its low edge has label $\id[2]^{\otimes n}$ and its high edge has label $P=P_n\otimes\cdots\otimes P_1$ where $P_j=X$ if $u_j=1$ and $P_j=\mathbb I$ if $u_j=0$.
+             }
+    \end{enumerate}
+
+	We now show $\mathcal{V}_n\subseteq \mathcal X_n$, also by induction.
+	
+	\textbf{Base case: $n=1$.} There are only two Tower-\limdds on $1$ qubit satisfying the description above, namely
+	\begin{enumerate}[(1)]
+		\item A node whose two edges point to the leaf. Its low edge has label $1$, and its high edge has label $0$.
+		This node represents the XOR state $\ket 0$, corresponding to the vector space $V=\{0\}\subseteq\{0,1\}^1$.
+		\item A node whose two edges point to the leaf. Its low edge has label $1$ and its high edge also has label $1$.
+		This node represents the XOR state $\ket 0+\ket 1$, corresponding to the vector space $V=\{0,1\}$.
+	\end{enumerate}
+	
+	\textbf{Induction case. } Let $v$ be the root node of a Tower-\limdd as described above.
+	We distinguish two cases, depending on whether $v$'s high edge has label $0$ or not.
+	\begin{enumerate}[(a)]
+		\item The high edge has label $0$.
+		Then $\ket{v}=\ket{0}\ket{v_0}$ for a node $v_0$, which represents a XOR state $\ket{v_0}$ by the induction hypothesis.
+    \item the high edge has label $\pi=P_n\otimes\cdots\otimes P_1$ with $P_j \in \{\id[2], Z\}$.
+		Then $\ket{v}=\ket 0\ket{v_0}+\ket{1}\otimes\pi\ket{v_0}$.
+            By the observations above, this is a XOR state, corresponding to the vector space $V=\{0x|x\in V_0\}\cup \{1(ux)|x\in V_0\}$ where $u_j=1$ if $P_j=X$ and $u_j=0$ if $P_j=\id[2]$, and $V_0$ is the vector space corresponding to the XOR state $\ket{v_0}$.
+	\end{enumerate}
+\end{proof}
+
+Finally, we prove the stabilizer-state case, which will follow from the follow theorem.
+%, where we recall that the Pauli group is
+%\[
+%    \Pauli_n = \left\{\lambda \bigotimes_j P_j \mid P_j \in \{\id[2], X, Y, Z\}, \lambda \in \{0, \pm 1, \pm i\}\right\}.
+%\]
+\def\paulistrings{\textsc{PauliStrings}}
+For this, denote by $\paulistrings_n$ the set of length $n$- Pauli strings, i.e. length-$n$ tensor products of single-qubit Pauli operators.
+%We will prove the following.
+
+\begin{theorem}
+	\label{thm:stab-states-recursive}
+	The set of stabilizer states on $n$ qubits equals $\mathcal{B}_n$, defined \[
+	\mathcal{B}_n =
+\begin{cases}
+\{ \ket{0}, \ket{1}, \ket{+}, \ket{-}, \ket{+i}, \ket{-i} \}
+	\mbox{ if $n=1$;}\\
+\mathcal{K}_{n} \cup \mathcal{F}_n
+	 \mbox{ otherwise}\\
+\end{cases}
+	\]
+	where $\mathcal{K}_n$ and $\mathcal{F}_n$ are recursively defined by
+	\[
+\mathcal{K}_{n+1} := 
+	\set{ \ket{a} \otimes \ket{\phi} \,\,\Big|\,\, \textnormal{$\ket{a} \in \mathcal{B}_1$ and $\ket{\phi} \in\ \mathcal B_n$}}
+\]
+and
+\begin{eqnarray*}
+\mathcal{F}_{n+1} :=
+& \nonumber
+	\set{
+		(\ket{0} \otimes \ket{\phi} + \alpha \ket{1} \otimes P\ket{\phi}) /\sqrt{2}
+	\,\,\Big|\,\,
+    \textnormal{$\ket{\phi} \in\mathcal B_n, P \in\paulistrings_n$,
+	$\langle \phi |P|\phi\rangle = 0$ and $\alpha\in\{\pm 1\}$}  }
+.
+\end{eqnarray*}
+\end{theorem}
+
+The characterisation of Pauli-Tower-\limdds corresponding to stabilizer states follows directly from \autoref{thm:stab-states-recursive}:
+
+\begin{corollary}
+[Stabilizer states are Pauli-Tower-\limdds]
+	\label{thm:pauli-tower-limdds-are-stabilizer-states}
+    Each $n$-qubit stabilizer state is represented by a semi-reduced Tower-\limdd on $n$ nodes ($n > 0$), with the high labels and root labels $\in\pauli_n$, i.e. high edge labels $\lambda P$ with $\lambda \in \{\pm 1, \pm i\}$ and $P\in \paulistrings_n$.
+    Conversely, every $n$-node Tower Pauli-\limdd represents a stabilizer state.
+%    The set of $n$-qubit stabilizer states is represented precisely by the family of semi-reduced Tower-\limdds with low edge labels $\id$ and high edge labels 
+%    \todo[inline]{Tim: to make induction hypothesis work, we should also include the root edge label, which may be any Pauli string}
+\end{corollary}
+\begin{proof}
+    We show by induction that all $n$-qubit stabilizer states can be written as semi-reduced Tower-\limdds with high edge labels and root edge labels $\in \pauli_n$.
+    We use the characterisation of the set of $n$-qubit stabilizer states given in \autoref{thm:stab-states-recursive}: 
+    \begin{enumerate} 
+        \item the six single-qubit stabilizer states are each represented by a \limdd with a single node, where the low edge label is $1$ and the high edge labels are all of the form $(\alpha, P)$, where $P$ is a single-qubit Pauli and $\alpha \in \{0, \pm 1, \pm i\}$, with as exception the state $\ket{1}$, which is represented by the Pauli-Tower-\limdd for $\ket{0}$ with a root edge $X$.
+%            For example, we can represent $(\ket{0} - i\ket{1}) / \sqrt{2}$ with low isomorphism $\unit_2$ and high isomorphism $-Y$ (or $-i X$).
+        \item consider a stabilizer state $\ket{a}\otimes \ket{\phi} \in \mathcal{K}_n$ with $n\geq 2$, where $\ket{\phi}$ is an $(n-1)$-qubit stabilizer state and $\ket{a}$ a single-qubit stabilizer state.
+            By the induction hypothesis, both are represented by a semi-reduced Pauli-Tower-\limdds, with root edge labels $E^{\phi}$ and $E^{\textnormal{a}}$.
+            Then create the Pauli-Tower-\limdd by replacing the leaf of the Tower-\limdd for $\ket{a}$ with the root of the Tower-\limdd of $\ket{\phi}$ and setting the root edge to $E^{\textnormal{a}}\otimes E^{\phi}$.
+        \item for stabilizer states $\ket{0}\otimes\ket{\phi} + \alpha\ket{1}\otimes P\ket{\phi} \in \mathcal{F}_n$ with $n\geq 2$, the Tower-\limdd is created by adding a fresh node on top of the Tower-\limdd for $\ket{\phi}$, with low edge label $\id$ and high edge label $\alpha \cdot P$. The root label is $Z^s\otimes B^{\phi}$, where $s=0$ if $B^{\phi}$ and $\alpha P$ commute and $s=1$ otherwise.
+    \end{enumerate} 
+    For the converse direction, we use induction on $n$ again, consider a Pauli-Tower-\limdd with low edge $\id$, high edge label $B$ and root edge label $E$.
+    For $n=1$, the \limdd represents the state $E\ket{\phi}$ with $\ket{\phi} := \ket{0} + B\ket{1}$, where $B\in \{0, \pm 1, \pm i\}$ and $E \in \Pauli_1$.
+    By checking all possible values for $B$, we find that $\ket{\phi}$ is a stabilizer state.
+    Since each $E\in \Pauli_1$ is a Clifford operation, $E\ket{\phi}$ is again a stabilizer state.
+    For $n>1$, the \limdd represents the state $E\ket{\phi}$ with $\ket{\phi} := \ket{0}\otimes \ket{\psi} + \ket{1} \otimes B\ket{\psi}$, where $\ket{\psi}$ is an $(n-1)$-qubit stabilizer state, $B\in \Pauli_{n-1}$ and $E \in \Pauli_n$.
+    We distinguish two cases:
+    \begin{itemize}
+        \item $\langle \psi | B | \psi \rangle = 0$, then $B$ anticommutes with at least one stabilizer of $\ket{\psi}$ (because if not, then either $B$ or $-B$ is a stabilizer of $\ket{\psi}$, by identical reasoning as in Claim 2 in the proof of \autoref{thm:stab-states-recursive}, resulting in $\langle \psi | B | \psi \rangle = \pm 1 \neq 0$).
+            Let $g$ be such a stabilizer.
+            Define $B' = Bg$ if the scalar of $B$ is $\pm i$, and $B':= B$ otherwise.
+            Then note that $B'$ will have scalar $\pm 1$.
+            Also note that $B\ket{\psi} = Bg \ket{\psi} = B'\ket{\psi}$, hence $\ket{\phi} = \ket{0}\otimes\ket{\psi} + \ket{1} \otimes B' \ket{\psi}$, where $\langle \psi| B'|\psi\rangle = 0$ and $B'$ has scalar $\pm 1$, hence $\ket{\phi} \in \mathcal{K}_n$, so $\ket{\phi}$ is a stabilizer state.
+        \item $\langle \psi | B | \psi \rangle \neq 0$, then it is straightforward to prove by induction, using \autoref{thm:stab-states-recursive}, that $\langle \psi | B | \psi \rangle \in \{\pm 1, \pm i\}$.
+            Hence we can write $\ket{\phi} = (\ket{0} + \langle \psi | B | \psi \rangle \ket{0}) \otimes \ket{\psi}$, so $\ket{\phi} \in \mathcal{K}_n$, so $\ket{\phi}$ is a stabilizer state.
+    \end{itemize}
+    Again, $E \in \Pauli_n$ is a Clifford gate, so $E\ket{\phi}$ is a stabilizer state since $\ket{\phi}$ is.
+%The proof is similar for the reverse direction, i.e. showing that each Tower-\limdd as described in the corollary represents a stabilizer state, with the following additional clause.
+%    In the construction from stabilizer state $\in \mathcal{F}_n$ to Tower-\limdd above, it is assumed that $\langle \phi | P | \phi \rangle = 0$ by definition of $\mathcal{F}_n$.
+%    For the conversion in the other direction, we have no guarantuee on the value of $\langle \phi | P|\phi \rangle$, and if $\langle \phi | P |\phi\rangle \neq 0$ then we do not know if the resulting state is a member of $\mathcal{F}_n$.
+%    In the case that $\langle \phi | P | \phi\rangle \neq 0$, we claim that the resulting case is a member of $\mathcal{K}_n$.
+%    To see this, we use the fact that if $\ket{\phi}$ is a stabilizer state, then $\langle \phi |P|\phi\rangle \in \{0, \pm 1, \pm i\}$ (this can be straightforwardly proven by induction on the number of qubits using the characterisation of stabilizer states in \autoref{thm:stab-states-recursive}).
+%    It follows that $P\ket{\phi} = \beta \ket{\phi}$ for some $\beta\in \{\pm 1, \pm i\}$.
+%    Consequently, we can write the state of the Tower-\limdd as 
+%    $\ket{0}\otimes\ket{\phi} + \alpha\ket{1} \otimes P\ket{\phi} = 
+%    \ket{0}\otimes\ket{\phi} + \alpha\ket{1} \otimes \beta \ket{\phi} = (\ket{0} + \alpha\beta\ket{1}) \otimes \ket{\phi}$, which is a member of $\mathcal{K}_n$.
+\end{proof}
+
+
+Before proving \autoref{thm:stab-states-recursive}, we need the following definitions and lemmas.
+Recall from \autoref{sec:preliminaries}, that by a stabilizer subgroup, we mean an abelian subgroup of the Pauli group which does not contain $-\id$.
+In line with our implicit terminology in that section, we will here use the term `stabilizer group' for a stabilizer subgroup which is maximal.
+
+We will make use of the following lemma.
+    
+
+\begin{lemma}
+\label{lemma:maximal-stabilizer-group}
+    Let $n\geq 1$ and let $G \subset \Pauli_n$ be a stabilizer subgroup.
+    The following hold:
+\begin{enumerate}
+    \item{The dimension of the subspace stabilized by $G$ equals $2^k$ if and only if $G$ is generated by precisely $n-k$ independent elements \cite[10.5]{nielsen2000quantum}}
+\item{if $k=n$, then there is no stabilizer subgroup $G' \subsetneq \Pauli_n$ such that $G \subsetneq G'$}
+\end{enumerate}
+\end{lemma}
+
+We also need the following lemma, which is adapted from Audenaert and Plenio.
+
+\begin{lemma}\cite[p.8]{audenaert2005entanglement}\\
+\label{lemma:standard-form-check-matrix}
+A set of generators for the stabilizer group of any $n$-qubit stabilizer state can, modulo a phase $\pm 1$ each, be written as rows of an $n \times n$ matrix with single-qubit Paulis as entries.
+This matrix takes either of the following two forms:
+
+\begin{equation}
+\renewcommand{\arraystretch}{1.5} % give some more room
+%
+\left(\begin{array}{@{}c|c@{}}
+  \begin{matrix}
+	\sigma
+  \end{matrix}
+&
+\begin{matrix}
+ * & * & \dots & *
+\end{matrix}
+\\ \hline
+  \begin{matrix}
+  \unit \\
+  \unit \\
+  \dots \\
+  \unit \\
+  \end{matrix}
+& \quad
+	\textnormal{M}
+\end{array}\right)
+,\qquad
+\left(\begin{array}{@{}c|c@{}}
+  \begin{matrix}
+	\X\\
+	\Z	
+  \end{matrix}
+&
+\begin{matrix}
+ * & * & \dots & * \\
+ * & * & \dots & * 
+\end{matrix}
+\\ \hline
+  \begin{matrix}
+  \unit \\
+  \unit \\
+  \dots \\
+  \unit \\
+  \end{matrix}
+& \quad
+	\textnormal{M}
+\end{array}\right)
+\end{equation}
+where $\sigma \in \{\X,\Y,\Z\}$, the symbols $*$ can denote any Pauli and $M$ is an arbitrary matrix, whose entries are Paulis.
+%\todo{M is in RREF form in the original paper}
+\end{lemma}
+
+We now prove \autoref{thm:stab-states-recursive}, by proving the two inclusions $S_n \subseteq B_n$ and $B_n \subseteq S_n$ separately, where $S_n$ denotes the set of $n$-qubit stabilizer states.
+
+\begin{proposition}
+\label{prop:each-stabilizer-is-recursive}
+For all $n$, we have $S_n \subseteq B_n$.
+\end{proposition}
+
+\begin{proof}
+We use induction on $n$. For the case $n=1$, it is sufficient to note that all single-qubit stabilizer states are precisely the eigenstates of the single-qubit Paulis $\X,\Y$ and $\Z$. That is, $S_1 = B_1$.
+
+	Now suppose $S_{n-1} \subseteq B_{n-1}$ for some $n\geq 2$. We prove that $S_{n} \subseteq B_{n}$. Let $\ket{\phi} \in S_{n}$. We apply lemma~\ref{lemma:standard-form-check-matrix} and obtain the following two cases:
+\begin{itemize}
+\item First case: $\ket{\phi}$ can be given a set of generators in the following form:
+
+\[
+\left(\begin{array}{@{}c|c@{}}
+  \begin{matrix}
+	\sigma
+  \end{matrix}
+&
+A
+\\ \hline
+  \begin{matrix}
+  \unit\\
+  \unit\\
+  \vdots\\
+  \unit
+  \end{matrix}
+&
+  \begin{matrix}
+  B_1\\
+  B_2\\
+  \vdots\\
+  B_{n-1}\\
+  \end{matrix}
+\end{array}\right)
+%
+,\qquad
+\begin{pmatrix}
+\gamma_A\\
+\gamma_1\\
+\gamma_2\\
+\vdots\\
+\gamma_{n-1}
+\end{pmatrix}
+\]
+where $\sigma \in \{\X,\Y,\Z\}$, the phases $\gamma_A, \gamma_1, \dots, \gamma_{n-1} \in \{-1,+1\}$, and $A, B_1, \dots, B_{n-1}$ are Pauli strings of length $n$.
+We will prove that in this case, $\ket{\phi} \in \mathcal{K}_n$.
+In order to prove this, first note the following.
+
+        \textbf{Claim 1:} $\{\gamma_j\cdot B_j | 1 \leq j \leq n - 1\}$ generates a stabilizer group $\mathfrak{B}$ of size $2^{n-1}$.\\
+
+This follows from the following facts:
+\begin{itemize}
+\item{%
+        $[B_j, B_k] = 0$ for all $1\leq j,k \leq n-1$. Here, $[M, N] := MN - NM$ denotes the commutator of operators $M$ and $N$.
+}
+\item{%
+        $-\unit_{2^n}$ cannot be written as product of (a subset of) the $B_j$.
+}
+\item{%
+all $B_j$ are independent, i.e.\ none of them can be written as product of (subset of) the others.
+Therefore the $B_j$, of which there are $n-1$, generates a group of $2^{n-1}$ elements.
+}
+\end{itemize}
+Each of these three properties follows directly from the similar property for the group
+$\{\gamma_j\cdot\unit_2 \otimes B_j | 1 \leq j \leq n - 1\}$.
+If this were the case, then this would also hold for at least one of the $\unit \otimes B_j$, which contradicts the fact that the stabilizer group of $\ket{\phi}$ is generated by $n$ elements.
+
+        By Claim 1 and \autoref{lemma:maximal-stabilizer-group}, we find that there exists a unique state that is stabilized by $\mathfrak{B}$, which we denote by $\ket{\psi}$.
+We now claim the following:\\
+
+        \textbf{Claim 2:} either $A$ or $-A$ is an element of $\mathfrak{B}$.
+
+In order to prove claim 2, first note that $A$ commutes with all $B_j$ by the fact that $\sigma \otimes A$ does so with each $\unit_2\otimes B_j$.
+Now consider the commutative group $S$ generated by $\{ A, \gamma_1\cdot B_1, \dots, \gamma_{n-1}\cdot B_{n-1}\}$.
+By Lemma~\ref{lemma:maximal-stabilizer-group}(2), either $S = \langle B_1, \dots, B_{n-1}\rangle$ or $S=\mathcal{P}_n$.
+In the first case, $A$ is an element of $\langle B_1, \dots, B_{n-1} \rangle$.
+In the second case, $-\unit \in S$ holds, and because $-\unit \notin \langle B_1, \dots, B_{n-1}\rangle$, it must be that there exists $A' \in \langle B_1, \dots, B_{n-1}\rangle$ such that $A \cdot A'= -\unit$.
+The only solution to the latter equation is $A' = - A$, which concludes the proof of the claim.
+
+By Claim 2, $\delta A \in \mathfrak{B}$ for some $\delta \in \{\pm 1\}$, and therefore $\delta \unit_2 \otimes A$ is an element of the stabilizer group of $\ket{\phi}$.
+It follows that we may replace the generator $\gamma_A\cdot \sigma \otimes A$ by $\left(\gamma_A \cdot \sigma\otimes A\right) \cdot \left(\delta \unit_2 \otimes A\right) = \gamma_A' \sigma \otimes \unit_{2^{n-1}}$, where $\gamma_A' = \gamma_A \delta$.
+Thus, we can write the generators of $\ket{\phi}$'s stabilizer group in even further reduced form:
+\[
+\left(\begin{array}{@{}c|c@{}}
+  \begin{matrix}
+	\sigma
+  \end{matrix}
+&
+\unit \dots \unit
+\\ \hline
+  \begin{matrix}
+  \unit\\
+  \unit\\
+  \vdots\\
+  \unit
+  \end{matrix}
+&
+  \begin{matrix}
+  B_1\\
+  B_2\\
+  \vdots\\
+  B_{n-1}\\
+  \end{matrix}
+\end{array}\right)
+%
+,\qquad
+\begin{pmatrix}
+\gamma_A'\\
+\gamma_1\\
+\gamma_2\\
+\vdots\\
+\gamma_{n-1}
+\end{pmatrix}
+.
+\]
+
+Now note that each of the rows in this matrix stabilizes $\ket{a}\otimes \ket{\psi}$, where $\ket{a}$ is the unique eigenvector of $\gamma_A' \sigma$ with eigenvalue $+1$.
+Since the stabilizer group is maximal, it stabilizes only a single unique quantum state, and it therefore must be that $\ket{\phi} = \ket{a} \otimes \ket{\psi} \in \mathcal{K}_{n}$.
+%
+%
+%
+%
+\item Second case: suppose that $\ket{\phi}$ can be given a set of generators in the following form:
+	\[
+\left(\begin{array}{@{}c|c@{}}
+  \begin{matrix}
+	\X\\
+	\Z	
+  \end{matrix}
+&
+\begin{matrix}
+ A\\
+ C
+\end{matrix}
+\\\hline
+  \begin{matrix}
+  \unit\\
+  \unit\\
+  \vdots\\
+  \unit
+  \end{matrix}
+&
+  \begin{matrix}
+  B_1\\
+  B_2\\
+  \vdots\\
+  B_{n-2}\\
+  \end{matrix}
+\end{array}\right)
+%
+,\qquad
+\begin{pmatrix}
+\gamma_A\\
+\gamma_C\\
+\gamma_1\\
+\gamma_2\\
+\vdots\\
+\gamma_{n-2}
+\end{pmatrix}
+	\]
+	where $A,C$ and $B_k$ for all $1\leq k \leq n-2$ are Pauli strings and $\gamma_A, \gamma_C, \gamma_k \in \{+1,-1\}$.
+In this case, we will prove that $\ket{\phi} \in \mathcal{F}_n$.	
+In order to prove this, first note that since all the stabilizer generators commute, we have the following commutation relations:
+	\begin{eqnarray*}
+		[A,B_j] = [C,B_j] = 0 	&& \textnormal{ for all $1\leq j\leq n-2$}\\
+		\{A,C\} = 0 		&& \textnormal{ since $[\X\otimes A,\Z\otimes C] = 0$ and $\{\X,\Z\}=0$}
+	\end{eqnarray*}
+    where $\{M, N\} := MN + NM$ is the anticommutator of $M$ and $N$.
+
+We will need the following intermediate result:
+
+\textbf{Claim:} the matrix $C$ together with the $B_j$ generates a stabilizer group of $2^{n-1}$ elements.
+The fact that $C$ together with the $B_j$ generate a stabilizer group is shown similarly to Claim 1 in the first case of this proof.
+It only remains to show that $C \notin \langle B_1, \dots, B_{n-2} \rangle$.
+To show this, we reason by contradiction: suppose that $C\in \langle B_1, \dots, B_{n-2}\rangle$, then it must be that $\unit_2 \otimes C$ is a stabilizer of $\ket{\phi}$, and therefore $\left(Z\otimes C\right)\cdot \left(\unit_2 \otimes C\right) = Z \otimes \unit \otimes \dots \otimes \unit$ is an element of the stabilizer group of $\ket{\phi}$, which is a contradiction because $Z \otimes \unit \otimes \dots \otimes \unit$ and $X \otimes A$ anticommute.
+
+Now let $\ket{\psi}$ be the $(n-1)$-qubit stabilizer state of the stabilizer group generated by $\langle C, B_1, \dots, B_{n-2}\rangle$.
+Note that each of the rows in the generator matrix stabilizes $\left(\ket{0} \otimes \ket{\psi} + \gamma_A \ket{1} \otimes A\ket{\psi}\right) / \sqrt{2} \in \mathcal{F}_n$.
+Since the stabilizer state stabilized by a stabilizer group is unique, it must be that this state equals $\ket{\phi}$.
+
+To show that $\ket{\phi}\in \mathcal{F}_n$, it only remains to prove that $\langle \psi |A |\psi\rangle = 0$, which follows from the fact that $A$ and $C$ anticommute: 
+\[
+	\langle \psi |A\ket{\psi} = \langle \psi| A C\ket{\psi} = \langle \psi| -CA\ket{\psi} = -\langle \psi |A\ket{\psi}
+	\]
+and thus $\langle \psi |A \ket{\psi} = 0$.
+
+
+\end{itemize}
+\end{proof}
+
+\begin{proposition}
+For all $n$, $B_n \subseteq S_n$.
+\end{proposition}
+\begin{proof}
+By induction on $n$.
+Immediate for $n=1$ since $B_1 = S_1$.
+Now assume the proposition holds for $n-1$: $B_{n-1} \subseteq S_{n-1}$.
+
+We distinguish the cases $\ket{\phi} \in \mathcal{K}_n$ and $\ket{\phi} \in \mathcal{F}_n$.
+In both cases, we explicitly construct the stabilizer generators.
+\begin{itemize}
+    \item If $\ket{\phi} \in \mathcal{K}_n$, then we may write $\ket{\phi} = \ket{a} \otimes \ket{\psi}$, where $\ket{a} \in S_1$ and $\ket{\psi} \in B_{n-1} \subseteq S_{n-1}$.
+        Let $\gamma \cdot \sigma$ be the generator for the stabilizer group of $\ket{a}$, where $\gamma \in \{\pm 1\}$ and $\sigma$ is a single-qubit Pauli operator.
+    Note that $\ket{\phi}$ is stabilized by $\gamma \sigma \otimes \unit_{2^{n-1}}$ and by each of $\{\unit_2 \otimes B \mid B\in\mathcal{P}_{n-1} \text{ and }B \text{ stabilizes } \ket{\psi}\}$.
+Since the former is independent of each of the latter (i.e.\ cannot be written as product of subset of the latter), they together generate a group with $n$ generators.
+It is straightforward to check that this group is abelian and that it does not contain $-\id$.
+        Consequently, it is a stabilizer group.
+        %
+\item If $\ket{\phi} \in \mathcal{F}_n$, then we can write $\ket{\phi} = \left(\ket{0} \otimes \ket{\psi} + \alpha \ket{1} \otimes A \ket{\psi}\right)/\sqrt{2}$ where $\ket{\psi}$ is a stabilizer state, $\alpha \in \{\pm 1\}$ and $A$ is a Pauli string with possible phase $\pm 1$ with $\langle \psi | A\ket{\psi} = 0$.
+	Let $\{B_1, B_2, \dots, B_{n-1}\}$ be a set of generators of the stabilizer group of $\ket{\psi}$.
+        Note that $A$ is not an element of the stabilizer group of $\ket{\phi}$ by the fact that $\langle \phi | A\ket{\phi} = 0 \neq 1$.
+		Thus, $A$ anticommutes with at least one of the $B_j$ (because if not, then either $A$ or $-A$ is in the stabilizer group of $\ket{\phi}$ (see Claim 2 above), contradicting $\langle \phi | A\ket{\phi} = 0$).
+		Without loss of generality, assume that only $B_1$ anticommutes with $A$ (if other $B_j$ do so as well, replace those by $B_j \cdot B_1$).
+		Now note that the $n$ independent elements $\left\{ \alpha X \otimes A, Z\otimes B_1, \unit_2 \otimes B_2, \dots, \unit_2 \otimes B_{n-1}\right\}$ generate a stabilizer group and they all stabilize $\ket{\phi}$.
+		Therefore, $\ket{\phi}$ is a stabilizer state.
+\end{itemize}
+\end{proof}
+

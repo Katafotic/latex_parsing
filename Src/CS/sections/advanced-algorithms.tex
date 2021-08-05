@@ -1,0 +1,267 @@
+\section{Advanced algorithms}
+\label{sec:advanced-algorithms}
+
+\subsection{Measuring an arbitrary qubit}
+\label{subsec:measure-arbitrary-qubit}
+
+\autoref{alg:measure-arbitrary-qubit} allows one to measure a given qubit.
+Specifically, given a qubit index $k$ and an outcome $y\in \{0,1\}$, it computes the probability of observing $\ket{y}$ when measuring the $k$-th significant qubit.
+%\todo[inline]{to do: Add more text ,which explains how/why the algorithm works. -LV}
+The algorithm proceeds by traversing the \limdd with root edge $e$ at \autoref{l:traverse1}.
+Like \autoref{alg:measurement-top-qubit} which measured the top qubit, this algorithm computes a squared norm.
+The case that is added, relative to \autoref{alg:measurement-top-qubit}, is the case when $n>k$, in which case it calls the procedure \textsc{SquaredNormProjected}.
+On input $e,y,k$, the procedure \textsc{SquaredNormProjected} outputs the squared norm of $\Pi_k^y\ket{e}$, where $\Pi_k^y$ is the projector which projects the $k$-th qubit onto $\ket{y}$.
+
+\begin{algorithm}[t!]
+	\caption{Compute the probability of observing $\ket{y}$ when measuring the $k$-th qubit of the state $\ket{e}$. Here $e$ is given as \limdd on $n$ qubits, $y$ is given as a bit, and $k$ is an integer index.
+	For example, to measure the top-most qubit, one calls $\textsc{Measure}(e,0,n)$.
+	The procedure $\textsc{SquaredNorm}(e,y,k)$ computes the scalar $\bra{e}(\mathbb I\otimes \ket{y}\bra{y}\otimes \mathbb I)\ket{e}$, i.e., computes the squared norm of the state $\ket{e}$ after the $k$-th qubit is projected to $\ket{y}$. We omit dynamic programming here only for readability.}
+	\label{alg:measure-arbitrary-qubit}
+	\begin{algorithmic}[1]
+		\Procedure{MeasurementProbability}{\Edge
+		          $\ledge[e] {\lambda P_n\otimes P^\prime}v$, $y\in \{0,1\}$, $k\in Z_{\geq 1}$}
+%		\State (Write $A$ as $A=X^{x}\diagonal{z}\otimes A^\prime$)
+		\If{$n=k$}
+			\State $p_0:=\textsc{SquaredNorm}(\follow 0e)$
+			\State $p_1:=\textsc{SquaredNorm}(\follow 1e)$
+			\State \Return $p_j/(p_0+p_1)$ \textbf{where} $j=0$ if $P_n\in\{\mathbb I, Z\}$ and $j=1$ if $P_n \in\set{X,Y}$ 
+%			         \Comment{$i = 1$ iff Anti-diagonal}
+		\Else
+			\State $p_0:=\textsc{SquaredNormProjected}(\follow 0e, y, k)$ \label{l:traverse1}
+			\State $p_1:=\textsc{SquaredNormProjected}(\follow 1e, y, k)$
+			\State \Return $(p_0+p_1)/\textsc{SquaredNorm}(e)$
+		\EndIf
+		\EndProcedure
+		\Procedure{SquaredNorm}{$\Edge \ledge{\lambda P}{v}$}
+			\If{$n=0$}
+			%	\State 
+			\Return $|\lambda|^2$
+			%		\Else
+			\EndIf
+			\If{$v\in \textsc{Norm-cache}$}
+%			\Return $|\lambda|^2\cdot \textsc{Norm-cache}[v]$ \Comment{Dynamic programming}
+			\EndIf
+			\State $s:=\textsc{Add}(\textsc{SquaredNorm}(\follow 0{\ledge \id v}),\textsc{SquaredNorm}(\follow 1{\ledge \id v}))$
+%			\State $\textsc{Norm-cache}[v]:=s$ \Comment{Store in dynamic programming cache}
+			\State \Return $|\lambda|^2s$
+		\EndProcedure
+		\Procedure{SquaredNormProjected}{\Edge $\ledge[e] {\lambda P_n\otimes P'}v$, $y\in\{0,1\}$, $k\in \mathbb Z_{\geq 1}$}
+		\State $b:=(P_n \in\set{X,Y})$
+						         \Comment{i.e., $b = 1$ iff $P_n$ is Anti-diagonal}
+			\If{$n=0$}
+				\State \Return $|\lambda|^2$
+			\ElsIf{$n=k$}
+				\State \Return $\textsc{SquaredNorm}(\follow{b\oplus y}{e})$
+%			\ElsIf{$(v,y,k)\in \textsc{NormProj-cache}$}
+%				\State \Return $|\lambda|^2\cdot \textsc{NormProj-cache}[v,y,k]$
+			\Else
+				\State $\alpha_0:=\textsc{SquaredNormProjected}(\follow 0{\ledge {\mathbb I}v}, b\oplus y, k)$
+				\State $\alpha_1:=\textsc{SquaredNormProjected}(\follow 1{\ledge {\mathbb I}v}, b\oplus y, k)$
+%				\State $\textsc{NormProj-cache}[v,y,k]:=\alpha_0+\alpha_1$
+				\State \Return $|\lambda|^2\cdot (\alpha_0+\alpha_1)$
+			\EndIf
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+
+
+After measurement of a qubit $k$, a quantum state is typically projected to $\ket 0$ or $\ket 1$
+ ($b=0$ or $b=1$) on that qubit, depending on the outcome.
+\autoref{alg:measure-arbitrary-qubit-update2} realizes this.
+It does so by traversing the \limdd until a node $v$ with $\index(v) = k$ is reached.
+It then returns an edge to a new node by calling $\makeedge(\low v, 0)$ for projection to $\ket 0$ and  $\makeedge(0, \high v)$ on \autoref{l:project-project},
+recreating nodes level $k$ in the backtrack on \autoref{l:project-bt}.
+The projection operator $O \defn (\id[n-k] \otimes \ket{b}\bra{b}\otimes \id[k-1])$ commutes with
+any LIM $A$ with diagonal operator $P_k$ ($\id[2]$ or $Z$). For the anti-diagonal Pauli operators, we have $O \cdot A \ket v = A \cdot (\id[n-k] \otimes \ket{1-b}\bra{1-b}\otimes \id[k-1])  \ket v$.
+The algorithm corrects for this on \autoref{l:project-diag2}.
+%\begin{algorithm}
+%	\begin{algorithmic}[1]
+%		\Procedure{\project}{\Edge $\ledge Av$ \textbf{with} $A=\lambda P_n\otimes\cdots\otimes P_1$, $y\in \{0,1\}$, $k\in \mathbb Z_{\geq 1}$}
+%		\State $x= P_n \in \set{X,Y}$    \label{l:project-diag2}  \Comment{flip is $A_k$ is anti-diagonal}     
+%		\If{$n= k$}
+%			\If{$y=0$} \Return $\textsc{MakeEdge}(\textsc{Project}(e_x,k,x\oplus y), 0)$      \label{l:project-project}
+%			\Else\ \Return $\textsc{MakeEdge}(0, \textsc{Project}(e_{1-x},k,x\oplus y))$
+%			\EndIf
+%		\Else
+%			\If{$(v,k,x\oplus y)\in \textsc{Project-cache}$}
+%				\State \Return $A\cdot \textsc{Project-cache}[v,k,x\oplus y]$
+%			\EndIf
+%			\State node $w:=\textsc{MakeEdge}(\textsc{Project}(e_0,k,x\oplus y), \textsc{Project}(e_1,k,x\oplus y))$ \label{l:project-bt}
+%			\State $\textsc{Project-cache}[v,k,x\oplus y]:=w$ \Comment{Store the result in the cache}
+%			\State \Return $\ledge Aw$
+%		\EndIf
+%		\EndProcedure
+%	\end{algorithmic}
+%	\caption{An algorithm which projects the $k$-th qubit to $\ket{y}$. That is, on input $\ledge Av$, the algorithm outputs a \limdd edge representing the state $\mathbb I^{\otimes n-k}\otimes \ket{y}\bra{y}\otimes \mathbb I^{\otimes n-k-1}\ket{\ledge Av}$. This can be used to update a \limdd after a measurement.}
+%	\label{alg:measure-arbitrary-qubit-update2}
+%\end{algorithm}
+
+\begin{algorithm}
+    \begin{algorithmic}[1]
+        \Procedure{\project}{\Edge $\ledge {\lambda P_n\otimes .. \otimes P_1}v$, $k\leq n=\index(v)$, $b\in\set{0,1}$}
+        \State $b' :=  x \oplus b $ \textbf{where} $x=0$ if $P_k\in\set{\mathbb I,Z}$ and $x=1$ if $P_k\in\set{X,Y}$
+        \label{l:project-diag2}  \Comment{flip $b$ if $P_k$ is anti-diagonal}         
+        \State \textbf{if} $(v,k, b') \in \cache$ \textbf{then} \Return $\cache[v,k, b']$
+         \If{$n = k$}
+                \State $e := \makeedge((1- b') \cdot \low v,~~ b' \cdot \high v)$ 
+                                                    \Comment{Project $\ket v$ to $\ket{b'}\bra{b'}\otimes \id[2]^{\otimes n-1}$}   
+                     \label{l:project-project}
+            \Else \Comment{$n \neq k$:}
+                \State $e :=\textsc{MakeEdge}(\project(\low v,k, b'),
+                                            \project(\high v,k,b'))$ \label{l:project-bt}\vspace{-1em}
+             \EndIf
+                 \State $\cache[v,k, b'] := e$
+                 \State \Return $e$
+                \EndProcedure
+        \end{algorithmic}
+        \caption{Project \limdd \ledge Av to $\ket b$ for qubit $k$, i.e.,
+           $(\id[n-k] \otimes \ket{b}\bra{b}\otimes \id[k-1])\cdot \ket{Av}$.}
+        \label{alg:measure-arbitrary-qubit-update2}
+\end{algorithm}
+
+\subsection{Hadamards on stabilizer states in polynomial time}
+\label{sec:hadamard-stabilizer-polytime}
+
+We show that, using the algorithms that we have given, a Hadamard can be applied to a stabilizer state in polynomial time.
+We emphasize that our algorithms do not invoke existing algorithms dedicated to applying a Hadamard to a stabilizer state; instead, the \limdd algorithms are inherently polynomial-time for this use case.
+
+\begin{theorem}
+	\label{thm:hadamard-stabilizer-polytime}
+	\autoref{alg:apply-hadamard}, which applies a Hadamard gate to a stabilizer state represented as a Pauli-\limdd, runs in polynomial time.
+\end{theorem}
+\begin{proof}
+	Let $\ket\phi$ be a stabilizer state, represented by a \limdd with root edge $\ledge Pv$.
+	By \autoref{thm:pauli-tower-limdds-are-stabilizer-states}, this \limdd is a Tower Pauli-\limdd.
+	\autoref{alg:apply-hadamard} makes two calls to \textsc{Add}; both are of the form $\textsc{Add}(\ledge {\lambda P}v,\ledge{\lambda Qv})$ where $\lambda\in \mathbb C$ is a scalar, $P$ and $Q$ are Pauli strings, and $v$ is a node representing a stabilizer state.
+	\autoref{thm:only-linear-recursive-add-calls-general} tells us that at most $8n$ recursive calls to \textsc{Add} are made.
+	Each recursive call to \textsc{Add} may invoke the \textsc{MakeEdge} procedure, which runs in time $\mathcal O(n^3)$, yielding a total worst-case running time of $\mathcal O(n^4)$.
+\end{proof}
+
+\begin{lemma}
+	\label{thm:only-linear-recursive-add-calls}
+	Let $v$ be a node in a Tower Pauli-\limdd representing a stabilizer state, and $P$ a Pauli string.
+	Then a call to $\textsc{Add}(\ledge {\mathbb I}v,\ledge{P}v)$ invokes only $\mathcal O(n)$ recursive calls~to~\textsc{Add}.
+\end{lemma}
+\begin{proof}
+	Let $v_0,\ldots, v_n$ be the nodes in the Tower Pauli-limdd, with $v=v_n$ the top node and $v_0$ the Leaf node.
+	Let $Q^k$ be the label on the high edge from $v_{k+1}$ to $v_k$, for $k=1\ldots n$.
+	Let $P=P_n\otimes\cdots\otimes P_1$ and write $P^{(k)}=P_{k}\otimes\cdots\otimes P_1$, so that, e.g., $P=P_n\otimes P_{n-1}\otimes P^{(n-2)}$.
+	
+	We will show that, upon calling $\textsc{Add}(\ledge{\mathbb I}v,\ledge Pv)$, the recursive calls to \textsc{Add} are all of the form either $\textsc{Add}(\ledge{\mathbb I}{v_k},\ledge{\lambda P^{(k)}}{v_k})$, or $\textsc{Add}(\ledge{Q^k}{v_{k}},\ledge{\lambda P^{(k)}Q^k}{v_{k}})$ with $\lambda\in \{\pm 1,\pm i\}$.
+	Let us first note how the lemma would follow from this fact.
+	If these are the only ways in which the algorithm is called, then there are only $8n$ different parameters with which the algorithm is invoked.
+	Because the algorithm uses a cache in which it stores the result of each computation, it will not descend into recursive calls after a cache hit.
+	Therefore, only at most $8n$ recursive calls to \textsc{Add} are made after the initial call.
+	
+	First, suppose the algorithm is invoked as $\textsc{Add}(\ledge{\mathbb I}{v_k},\ledge{\lambda P^{(k)}}{v_k})$.
+	If this yields a cache hit, the algorithm halts without recursing; otherwise, the following two recursive calls to \textsc{Add} are made,
+	\begin{align}
+		\label{eq:add-call-0}
+		&\textsc{Add}(\follow0{\ledge {\mathbb I}{v_k}},\follow0{\ledge {P^{(k)}}{v_k}}) \\
+		\label{eq:add-call-1}
+		\text{and } & \textsc{Add}(\follow 1{\ledge {\mathbb I}{v_k}},\follow 1{\ledge {P^{(k)}}{v_k}})
+	\end{align}
+	We note that $\follow 0{\ledge{\mathbb I}{v_k}}=\ledge{\mathbb I}{v_{k-1}}$ and $\follow 1{\ledge{\mathbb I}{v_k}}=\ledge {Q^{k-1}}{v_{k-1}}$.
+	The value of $\follow b{\ledge {P^{(k)}}{v_k}}$ depends on the value of $P_k$, so we distinguish four cases.
+	\begin{enumerate}[(a)]
+		\item \textbf{Case} $P_n=\mathbb I$.
+		Then $P\ket{v_k} = \ket 0P^{(k-1)}\ket{v_{k-1}}+\ket 1P^{(k-1)}\ket{v_{k-1}}$, so we have $\follow0{\ledge Pv}=P^{(k-1)}\ket{v_{k-1}}$ and $\follow 1{\ledge {P^{(k)}}v}=P^{(k-1)}\ket{v_{k-1}}$, as above.
+		\item \textbf{Case} $P_n=X$.
+		Then $P\ket{v_k}=\ket 0P^{(k-1)}Q^n\ket{v_{k-1}} + \ket 1P^{(k-1)}\ket{v_{k-1}}$, so we have $\follow 0{\ledge {P^{(k)}}{v_k}}=\ledge{P^{(k-1)}Q^k}{v_{k-1}}$ and $\follow 1{\ledge {P^{(k)}}{v_k}}=\ledge{P^{(k-1)}}{v_{k-1}}$.
+		\item \textbf{Case} $P_n=Y$.
+		Then $P\ket{v_n} = -i\ket 0P^{k-1}\ket{v_{k-1}}+i\ket 1P^{(k-1)}Q^{k-1}\ket{v_{k-1}}$, so we have $\follow0{\ledge {P^{(k)}}{v_k}}=\ledge {-iP^{(k-1)}}{v_{k-1}}$ and $\follow 1{\ledge {P^{(k)}}{v_k}}=\ledge{iP^{(k-1)}Q^k}{v_{k-1}}$.
+		\item \textbf{Case} $P_n=Z$.
+		Then $P\ket{v_k} = \ket 0P^{(k-1)}\ket{v_{k-1}}-\ket 1P^{(k-1)}Q^{k-1}\ket{v_{k-1}}$, so we have $\follow0{\ledge {P^{(k)}}{v_k}}=\ledge{P^{(k-1)}}{v_{k-1}}$ and $\follow1{\ledge {P^{(k)}}{v_k}}=\ledge{-P^{(k-1)}Q^{k-1}}{v_{k-1}}$.
+	\end{enumerate}
+	In each case, indeed the two recursive calls to \textsc{Add} of Equations \ref{eq:add-call-0} and \ref{eq:add-call-1} are of the form indicated.
+
+	Next, suppose that the algorithm is called as $\textsc{Add}(\ledge{Q^k}{v_{k}},\ledge{\lambda P^{(k)}Q^k}{v_{k}})$.
+	Then, on line \ref{algline:add-factor-out-LIM} of the \textsc{Add} algorithm, a LIM $C$ is built such that $C\ket{v_k}=\lambda Q^{k,-1}P^{(k)}Q^k\ket{v_k}$.
+	Then the algorithm proceeds as though it was called with $\textsc{Add}(\ledge{\mathbb I}{v_k},\ledge C{v_k})$.
+	The LIM $C$ satisfies $C\ket{v_k}=\pm \lambda P^{(k)}\ket{v_k}$.
+	By the observations above, this case, too, will yield only recursive calls to \textsc{Add} of the specified form.
+\end{proof}
+
+\begin{corollary}
+	\label{thm:only-linear-recursive-add-calls-general}
+	Let $v$ be a node in a Tower Pauli-\limdd representing a stabilizer state, $P,Q$ Pauli strings, and $\lambda\in \mathbb C$ a scalar.
+	Then a call to $\textsc{Add}(\ledge {\lambda P}v, \ledge {\lambda Q}v)$ invokes only $\mathcal O(n)$ recursive calls to \textsc{Add}.
+\end{corollary}
+\begin{proof}
+	If $P=\mathbb I$, then this is the same as \autoref{thm:only-linear-recursive-add-calls}.
+	Otherwise, the \textsc{Add} procedure factors out the LIM $\lambda P$ and proceeds as though it were called as $\textsc{Add}(\ledge{\mathbb I}v,\ledge{PQ}v)$, which is the case treated by \autoref{thm:only-linear-recursive-add-calls}.
+\end{proof}
+
+
+%\subsection{General ApplyGate algorithm}
+%\label{sec:apply-gate-limdd-limdd}
+%
+%\autoref{alg:apply-gate-limdd-limdd-cache} applies a gate to a state, allowing one to simulate a quantum circuit, just like \autoref{alg:apply-gate-limdd-limdd}.
+%By storing a different tuple in the cache than \autoref{alg:apply-gate-limdd-limdd}, it is able to better take advantage of dynamic programming. It proceeds exactly like the \textsc{ApplyGate} algorithm explained in \autoref{sec:apply-gate-limdd-limdd}.
+%
+% \todo{This seems incorect and we do not need it -AL}
+%
+%%\todo[inline]{Add more explanation or replace with a note in the main text ``we could actually cache modulo...'' -AL}
+%
+%\begin{algorithm}
+%	\caption{Applies the gate $[e^U]$ to the state $\ket{e^v}$. Here $e^U$ and $e^v$ are \limdd edges.
+%	The output is a \limdd edge $e^\Psi$ satisfying $\ket{e}=[e^U]\ket{e^v}$.}
+%	\label{alg:apply-gate-limdd-limdd-cache}
+%	\begin{algorithmic}[1]
+%		\Procedure{ApplyGate}{\Edge $e^U=\ledge BU$ \textbf{with} $B=\lambda_B Q_{2n}\otimes\cdots\otimes Q_1$, \Edge $e^v=\ledge Av$ \textbf{with} $A=\lambda_A P_n\otimes\cdots\otimes P_1$}
+%			\If{$A=0$ or $B=0$} \Return $0$
+%			\EndIf
+%			\If{$n=0$}
+%				\State \Return $\ledge {AB}v$
+%			\Else
+%				\State $R:=\rootlabel((Q_{2n-1}^\top P_n)\otimes (Q_{2n-3}^\top P_{n-1})\otimes\cdots\otimes (Q_1^\top P_1), e^v)$
+%				\If{$(U,\ledge Rv)\in \textsc{Apply-cache}$}\Comment{Dynamic programming}
+%					\State \Return $\lambda_A \lambda_B (Q_{2n}^\top\otimes Q_{2n-2}^\top\otimes\cdots\otimes Q_2^\top)\cdot \textsc{Apply-cache}[U, \ledge Rv]$
+%				\EndIf
+%%				\State edge $a_0:=\follow{0}{e^v}$
+%%				\State edge $a_1:=\follow{1}{e^v}$
+%				\For{$r,c\in\{0,1\}$}
+%%					\State edge $M_{r,c}:=\follow{rc}{e^U}$
+%%				\EndFor
+%%				\For{$r,c\in \{0,1\}$}
+%					\State \Edge $\Psi_{r,c}:=\textsc{ApplyGate}(\follow{rc}{\ledge {\mathbb I_2^{\otimes n}}{U}},\follow{c}{\ledge Rv})$
+%				\EndFor
+%				\State \Edge $e_0:=\textsc{Add}(\Psi_{0,0}, \Psi_{0,1})$
+%				\State \Edge $e_1:=\textsc{Add}(\Psi_{1,0}, \Psi_{1,1})$
+%				\State \Edge $e^\Psi:=\textsc{MakeEdge}(e_0,e_1)$
+%				\State $\textsc{Apply-cache}[U, \ledge Rv]:=e^\Psi$ \Comment{Store result in cache}
+%%				\State Store $(e^v,e^U, e^\Psi)$ in the \textsc{Apply-cache}
+%				\State \Return $\lambda_A\lambda_B (Q_{2n}^\top\otimes Q_{2n-2}^\top\otimes\cdots\otimes Q_2^\top)\cdot e^\Psi$
+%			\EndIf
+%		\EndProcedure
+%	\end{algorithmic}
+%\end{algorithm}
+
+%\begin{algorithm}
+%	\caption{An implementation of the \textit{follow} function. On input $e,y$, with $\ket{e}=\ket{0}\ket{e_0}+\ket{1}\ket{e_1}$, it outputs an edge to a \limdd $f$ such that $\ket{f}=\ket{e_y}$.}
+%	\label{alg:partial-expand}
+%	\begin{algorithmic}[1]
+%		\Procedure{Follow}{\Edge $e=(\cdot, A,v)$, $y\in \{0,1\}$}
+%			\State (Let $x,z,A^\prime$ be such that $A=X^x\diagonal{z}\otimes A^\prime$)
+%			\If{$y=0$}
+%				\State \Return $z^xA^\prime\ket{e_x^v}$
+%			\Else
+%				\State \Return $z^{1-x}A^\prime\ket{e_{1-x}^v}$
+%			\EndIf
+%		\EndProcedure
+%		\Procedure{Follow}{edge $e$, $i\in \{0,1\}$, $j\in \{0,1\}$}
+%			\State \Return $\textsc{}(\textsc{Follow}(e, i), j)$
+%		\EndProcedure
+%	\end{algorithmic}
+%\end{algorithm}
+
+%\begin{algorithm}
+%	\caption{Produces a new \glimdd with a new variable order, by swapping the qubits $q_k$ and $q_{k+1}$. Namely, if the edge $e$ has the order $q_1,q_2,\ldots, q_n$, then we produce a new \glimdd with variable order $q_1,q_2,\ldots,q_{k-2},q_k,q_{k-1},q_{k+1},q_{k+2},\ldots, q_n$.}
+%	\label{alg:swap-qubits}
+%	\begin{algorithmic}[1]
+%		\Procedure{SwapQubits}{\glimdd edge $e$, qubit $k$}
+%			\State (to do)
+%		\EndProcedure
+%	\end{algorithmic}
+%\end{algorithm}

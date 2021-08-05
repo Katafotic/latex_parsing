@@ -1,0 +1,614 @@
+
+%\todo[inline]{first explain the data structure \automorphismgenerators, i.e. that it can be thought of as spanning a vector space, and then give the algorithm}
+
+
+%Data structure {\sc SystemOfPauliEquations}
+%is a list of equations of the form $\lambda P (\alpha \ket{\phi}) = \beta \ket{\psi}$.
+%Has a method {\sc 
+
+
+\subsubsection{Choosing a canonical high-edge label}
+\label{sec:choose-canonical-isomorphism-pauli}
+
+%The \textsc{MakeEdge} procedure enforces that all reduction rules are satisfied, one by one.
+%For all reduction rules except for a canonical high-label choice this is straightforward, e.g. for Low Precedence, if the right child $\succ$ the left child, then swap them and apply the appropriate Pauli at the root label.
+
+On line \ref{algline:makeedge-get-labels}, the \makeedge algorithm finds a canonical label $\highlim$ for the high edge of node $v$ with a call to \textsc{GetLabels}.
+%The semi-reduced node  \lnode[w]{\unit_2^{\otimes n}}{v_0}{\hat A}{v_1} with $v_0 \neq v_1$ created in
+%\makeedge is passed to \textsc{GetLabels} to obtain a canonical
+%representative \lnode[v^{\text{r}}]{\unit_2^{\otimes n}}{v_0}{\highlim}{v_1}
+% (with `r' for reduced) and a root edge $\ledge[e] {\rootlim}{v^{\text{r}}}$ such that
+% $\ket e = \ket w$.
+It does so by taking the lexicographically minimal candidate for \highlim, see \autoref{sec:preliminaries}.
+We now first characterize all eligible labels \highlim, by reducing the problem to finding stabilizer subgroups of the children nodes $v_0,v_1$ (see \autoref{sec:preliminaries}), denoted as $\Stab(v_0)$ and $\Stab(v_1)$.
+Then, we show that \textsc{GetLabels} (\autoref{alg:find-canonical-edges}) correctly finds the lexicographically minimal eligible LIM (and corresponding root label), and runs in time $O(n^3)$ where $n$ is the number of qubits.
+
+\autoref{fig:reduced} illustrates this process.
+It shows the status of the \makeedge algorithm on line \ref{algline:makeedge-get-labels}, when it has enough information to construct the semi-reduced node $\lnode[w]{\id^{\otimes n}}{v_0}{\hat A}{v_1}$, with $\hat A=\lambda P$ on its high edge, shown on the left.
+The set of eligible high labels is shown, and the lexicographically minimal is chosen as $\highlim$, yielding a new node $v^r$ (with `r' for `reduced').
+This set of labels is decomposed into a choice of $v_0,v_1$ stabilizer $g_0, g_1$ and a choice for the most significant
+\Pauli operator on the root LIM $X^x Z^s$.
+\autoref{thm:eligible-isomorphisms-pauli} shows that this captures all possible high edges.
+
+
+
+%\begin{lemma}
+%    \label{lemma:isomorphic-nodes-have-same-high-label-scalar}
+%    Let $\lambda, \mu \in \mathbb{C}$ and let $A, B$ be Pauli strings of length $n$.
+%    Furthermore, let $v$ be the $n$-qubit root node of a reduced Pauli-\limdd.
+%    If $\ket{\lambda A} \psim \ket{\mu B}$, then $\lambda = \mu$.
+%\end{lemma}
+%\begin{proof}
+%    By induction...still to do
+%\end{proof}
+
+
+
+%\todo[inline]{Tim: maybe we should instead of Automorphism group, talk about Stabilizer group. Potential disadvantage is that readers who skim the work incorrectly assume that this is about groups which characterize stabilizer states, i.e. the group is maximal, making our algorithms look like a new (and stupid) way to simulate stabilizer states}
+
+\begin{theorem}
+    [Eligible high-edge labels]
+	\label{thm:eligible-isomorphisms-pauli}
+    Let $\lnode[w]{\id[2]^{\otimes n}}{v_0}{\lambda P}{v_1}$ be a semi-reduced $n$-qubit node
+    in a Pauli-\limdd, where $v_0, v_1$ are reduced, $P$ is a Pauli string and $\lambda \neq 0$.
+    For all nodes $v = \lnode[v]{\id[2]^{\otimes n}}{v_0}{\highlim}{v_1}$, it holds that $\ket{w} \simeq \ket{v}$  if and only if 
+    %\todo[inline]{Tim: I just realised that the statement should be: for all semi-reduced $w$: $\ket{w} \simeq \ket{v}$ if and only if $w$ has children $v_0$ and $v_1$, and the eligible high labels are of the form \dots. Should redo}
+    \begin{equation}
+        \label{eq:eligible-high-label}
+    \highlim = (-1)^s \cdot \lambda^{(-1)^x} g_0 P g_1
+    \end{equation}
+        for some $g_0 \in \Aut(v_0), g_1 \in \Aut(v_1), s,x\in \{0, 1\}$ and
+        $x=0$ if $v_0 \neq v_1$.
+    An isomorphism mapping $\ket{w}$ to $\ket{v}$ is 
+    \begin{equation}
+        \label{eq:root-label-eligible-high-label}
+        \rootlim = (X \otimes \lambda P)^{x} \cdot (Z^s \otimes (g_0)^{-1}).
+    \end{equation}
+\end{theorem}
+\begin{proof}
+    It is straightforward to verify that the isomorphism $\rootlim$ in eq.~\eqref{eq:root-label-eligible-high-label} indeed maps $\ket{w}$ to $\ket{v}$ (as $x = 1$ implies $v_0 = v_1$), which shows that $\ket{w} \simeq \ket{v}$.
+    For the converse direction, suppose there exists an $n$-qubit Pauli LIM $C$ such that $C\ket{w} = \ket{v}$, i.e.
+    \begin{equation}
+        \label{eq:eligible-proof}
+        C
+        \left(\ket{0}\otimes \ket{v_0} + \lambda \ket{1} \otimes P \ket{v_1}\right)
+        =
+        \ket{0}\otimes \ket{v_0} + \ket{1} \otimes \highlim \ket{v_1}
+        .
+    \end{equation}
+    We show that if $\highlim$ satisfies eq.~\eqref{eq:eligible-proof}, then it has a decomposition as in eq.~\eqref{eq:eligible-high-label}.
+    \def\brest{C_{\textnormal{rest}}}
+    \def\qtop{Q_{\textnormal{top}}}
+    We write $C = \qtop \otimes \brest$ where $\qtop$ is a single-qubit Pauli operator and $\brest$ is an $(n-1)$-qubit Pauli LIM (or a complex number $\neq 0$ if $n=1$).
+    We treat the two cases $\qtop \in \{\unit_2, Z\}$ and $\qtop \in \{X, Y\}$ separately:
+
+    \textbf{Case $\boldsymbol{\unit_2, Z}$.} Then $\qtop = \begin{smallmat} 1& 0\\0 & (-1)^y\end{smallmat}$ for $y \in \{0, 1\}$.
+        In this case, eq.~\eqref{eq:eligible-proof} implies $\brest \in \Aut(\ket{v_0})$ and $(-1)^y\lambda \brest P \ket{v_1} = \highlim \ket{v_1}$, or, equivalently, $(-1)^{-y} \lambda^{-1} P^{-1} \brest^{-1} \highlim \in \Aut(v_1)$.
+        Hence, by choosing $s = y$ and $x = 0$, we compute
+        \[
+            (-1)^y \lambda^{(-1)^0} \underbrace{\brest}_{\in \Aut(v_0)} P \underbrace{(-1)^{-y} \lambda^{-1} P^{-1} \brest^{-1} \highlim}_{\in \Aut(v_1)}
+            =
+            \frac{(-1)^{y} \lambda^{(-1)^0}}{ (-1)^y \lambda} \highlim
+            =
+            \highlim
+        \]
+    \textbf{Case $\boldsymbol{X, Y}$.} Write $\qtop = \begin{pmatrix}0& z^{-1}\\ z&0\end{pmatrix}$ where $z \in \{1, i\}$. Now, eq.~\eqref{eq:eligible-proof} implies
+		\begin{equation}
+		    \label{eq:z}
+            z \brest \ket{v_0} = \highlim \ket{v_1}
+		\qquad\textnormal{and}\qquad
+            z^{-1} \lambda \brest P \ket{v_1} = \ket{v_0}.
+		\end{equation}
+From eq.~\eqref{eq:z}, we first note that $\ket{v_0}$ and $\ket{v_1}$ are isomorphic, so by Corollary~\ref{cor:node-canonicity-strong}, we have $v_0 = v_1$.
+    Consequently, we find from eq.~\eqref{eq:z} that $z^{-1}\brest^{-1} \highlim \in \Aut(v_0)$ and $z^{-1}\lambda \brest P \in \Aut(v_1)$.
+    Now choose $x=1$ and choose $s$ such that $(-1)^s \cdot z^{-2} \brest^{-1} \highlim \brest = \highlim$ (recall that Pauli LIMs either commute or anticommute, so $\highlim\brest = \pm \brest \highlim$).
+    This yields:
+    \[
+        (-1)^s \lambda^{-1} \cdot \underbrace{z^{-1}\brest^{-1} \highlim}_{\in \Aut(v_0)} \cdot P \cdot \underbrace{z^{-1} \lambda P \brest}_{\in \Aut(v_1)}
+        =
+        \lambda^{-1} \cdot \lambda \cdot
+        (-1)^s 
+        z^{-2} \cdot \left(\brest^{-1} \highlim \brest \right)
+        =
+        \highlim
+    \]
+    where we used the fact that $P^2 = \id[2]^{\otimes (n-1)}$ because $P$ is a Pauli string.
+\end{proof}
+
+%Next, we define a lexicographic ordering on LIMs:
+
+\begin{corollary}\label{cor:highlabel}
+As a corollary of \autoref{thm:eligible-isomorphisms-pauli}, we find that taking, as in \autoref{fig:reduced},
+\[
+\highlabel(\lnode[v] {\id}{v_0}{\lambda P}{v_1}) = \displaystyle \min_{\hspace{-3mm} i,s,x \in \{0, 1\},g_i \in \Aut(v_i)}(\set{(-1)^s \cdot \lambda^{(-1)^x} \cdot g_0 \cdot P \cdot g_1 ~\Big|~ 
+         x \neq 1 \text{ if } v_0 \neq v_1 })
+\]
+yields a proper implementation of \highlabel as required by \autoref{def:reduced-limdd},
+because it considers all possible \highlim such that
+$\ket v \simeq_{\Pauli} \ket{0}\ket{v_0}+\ket{1}\otimes \highlabel(v)\ket{v_1}$.
+\end{corollary}
+
+
+
+% todo the procedure which chooses the lexmin element, not which constructs the isomorphism; this causes confusion
+
+%, with high edge label $\lambda P$ and children $v_0, v_1$ as input, computes the minimal eligible high edge label and the root edge label that preserves the represented quantum state.
+A naive implementation for \textsc{GetLabels} would follow the possible decompositions of eligible LIMs (see eq.~\eqref{eq:eligible-high-label}) and attempt to make this LIM smaller by greedy multiplication, first  with stabilizers of
+$g_0 \in \Aut(v_0)$, and then with stabilizers $g_1\in \Aut(v_1)$.
+To see why this does not work, consider the following example:
+the high edge label is $Z$ and the stabilizer subgroups $\Aut(v_0) = \langle X\rangle$ and $\Aut(v_1) = \langle Y \rangle$.
+Then the naive algorithm would terminate and return $Z$ because $X, Y> Z$, which is incorrect since the high-edge label $X \cdot Z \cdot Y = -i \id[2]$ is smaller than $Z$.
+
+\begin{algorithm}
+	\caption{
+		Algorithm for finding the LIMs $\highlim$ and $\rootlim$ required by \makeedge.
+		The LIM $\highlim$ is chosen canonically as the lexicographically smallest LIM in 
+		the set characterized in \autoref{thm:eligible-isomorphisms-pauli}.
+		It runs in $O(n^3)$-time (with $n$ the number of qubits),
+		provided $\getautomorphisms$ has been computed for the children $v_0, v_1$.
+		\label{alg:find-canonical-edges}
+	}
+	\begin{algorithmic}[1]
+		\Procedure{GetLabels}{PauliLim $\lambda P \neq 0$ (current high label), reduced children nodes $v_0, v_1$}
+		\Statex \textbf{Output}: canonical high label $\highlim$ and root label $\rootlim$
+		\State $G_0, G_1 := \getautomorphisms(v_0), \getautomorphisms(v_1)$
+		\State $(g_0, g_1) := \textsc{ArgLexMin}(G_0, G_1, \lambda P)$
+%		\label{line:getlabels-min}
+		\label{line:getlabels-argmin}
+%		\State $A := \lambda P \cdot g_0 \cdot g_1$
+%		\Comment $A = \textsc{LexMin}(G_0, G_1, \lambda P)$
+		%        \State \textbf{if} $P$ and $g_0$ commute \textbf{then} $t:=0$ \textbf{else} $t:=1$
+		%        \label{line:sign-error}
+		%        \Comment $A =  (-1)^t \cdot g_0 \cdot \lambda P \cdot g_1$
+		%
+		\If{$v_0=v_1$}
+		\label{algline:getlabels-start-minimizing}
+		\State $(x,s):=\displaystyle\argmin_{(x,s)\in\{0,1\}^2}(-1)^s\lambda^{(-1)^x}g_0Pg_1$
+		\Else
+		\State $x:=0$
+		\State $s:=\displaystyle \argmin_{s\in \{0,1\}} (-1)^s\lambda g_0Pg_1$
+		\label{line:minimized-lim} 
+		\EndIf
+		%        \State $x := 0$
+		%        \If {$v_0 = v_1$}  x  := $\displaystyle\argmin_{ 
+		%             x\in \set{0, 1}}  
+		%        \set{ (-1)^t \cdot \lambda^{(-1)^x} \cdot g_0 \cdot P \cdot g_1}$
+		%        \Comment see \autoref{thm:eligible-isomorphisms-pauli}
+		%        \EndIf
+		%        \State $s:= \displaystyle\argmin_{s\in \set{0,1}}\set{(-1)^s\cdot (-1)^t \lambda^{(-1)^x} \cdot g_0 \cdot  P  \cdot g_1} $
+		\State $\highlim := (-1)^s \cdot \lambda^{(-1)^x} \cdot g_0 \cdot P \cdot g_1$
+		\State $\rootlim := (X \otimes \lambda P)^{x} \cdot (Z^s \otimes (g_0)^{-1})$
+		%
+		\State \Return $(\highlim, \rootlim)$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+To overcome this, we consider the group closure of \emph{both} $\Aut(v_0)$ \emph{and} $\Aut(v_1)$.
+See \autoref{alg:find-canonical-edges} for the $O(n^3)$-algorithm for \textsc{GetLabels}, which proceeds in two steps.
+In the first step (\autoref{line:getlabels-argmin}), we use the subroutine \textsc{ArgLexMin} for finding the minimal Pauli LIM $A$ such that $A = \lambda P \cdot g_0 \cdot g_1$ for $g_0\in \Aut(v_0), g_1\in \Aut(v_1)$.
+We will explain and prove correctness of this subroutine below in \autoref{sec:lexmin}.
+%Next, note that the eligible-high-label expression in eq.~\eqref{eq:eligible-high-label} contains the factor $g_0 \cdot \lambda P \cdot g_1$ instead of $\lambda P \cdot g_0 \cdot g_1$; however, these differ by a factor $\pm 1$ because Pauli LIMs either commute or anticommute.
+%This potential sign error is corrected in \autoref{line:sign-error}.
+In the second step (Lines \ref{algline:getlabels-start-minimizing}-\ref{line:minimized-lim}), we follow eq.~\eqref{eq:root-label-eligible-high-label} by also minimizing over $x$ and $s$.
+Finally, the algorithm returns $\highlim$, the minimum of all eligible edge labels according to eq.~\eqref{eq:root-label-eligible-high-label}, together with a root edge label $\rootlim$ which ensures the represented quantum state remains the same.
+
+Below, we will explain $O(n^3)$-time algorithms for finding generating sets for the stabilizer subgroup of a reduced node and for \textsc{ArgLexMin}.
+Since all other lines in \autoref{alg:find-canonical-edges} can be performed in linear time, its overall runtime is $O(n^3)$.
+Note that we can amortize $\getautomorphisms$ over the \makeedge calls.
+
+
+
+
+
+
+
+
+
+%We now define the \highlabel~function, which computes the canonical root label following \autoref{def:reduced-limdd}, as the function invoking \autoref{alg:find-canonical-edges} on a semi-reduced node $\lnode{\id}{v_0}{\lambda P}{v_1}$ and returning $\highlabel$.
+%Above, we have argued that $\highlabel$ thus returns the minimal eligible high label.
+%It follows immediately from this fact that \highlabel~is correct, i.e. it obeys its requirement in \autoref{def:reduced-limdd}.
+
+%\begin{lemma}
+%    Let $v_0, v_1$ be reduced $n$-qubit nodes, and $A$ an $n$-qubit Pauli LIM.
+%    Then \autoref{alg:find-canonical-edges} on input $(A, v_0, v_1)$, outputs 
+%            $\displaystyle \min_{\textnormal{$n$-Pauli LIM} B} \{B \mid  B\ket{v_A} = \ket{v_B}\}$,\todo{$B \in $ ?}
+%    where we have denoted $\ket{v_C} = \ket{0}\otimes\ket{v_0} + \ket{1} \otimes C \ket{v_1}$ for a Pauli LIM $C$
+%    and a \alfons{semi-reduced node $v_C$}.
+%\end{lemma}
+%\begin{proof}
+%    \todo[inline]{TODO}
+%\end{proof}
+
+
+
+
+
+
+\subsubsection{Constructing the stabilizer subgroup of a \limdd node}
+\label{sec:pauli-isomorphism-detection}
+
+In this section, we give a recursive subroutine \getautomorphisms to construct the stabilizer subgroup $\Aut(\ket{v}) := \{A \in \paulilim_n \mid A\ket{v} = \ket{v}\}$ of an $n$-qubit \limdd node~$v$ (see \autoref{sec:preliminaries}).
+The subroutine is used by the algorithm \textsc{GetLabels} to select a canonical label for the high edge and root edge.
+If the stabilizer subgroup of $v$'s children have been computed already, \getautomorphisms's runtime is $O(n^3)$.
+\getautomorphisms returns a generating set for the group $\Stab(\ket{v})$.
+Since these stabilizer subgroups are generally exponentially large in the number of qubits $n$, but they have at most $n$ generators, storing only the generators instead of all elements may save an exponential amount of space.
+%Each $n$-qubit stabilizer subgroup has a generator set of size at most $n$.
+Because any generator set $G$ of size $|G|>n$ can be brought back to at most $n$ generators in time $\oh(|G| \cdot n^2)$ (see \autoref{sec:preliminaries}), we will in the derivation below show how to obtain generator sets of size linear in $n$ and leave the size reduction implicit.
+We will also use the notation $A \cdot G$ and $G \cdot A$ to denote the sets $\{A \cdot g | g\in G\}$ and $\{g \cdot A | g \in G\}$, respectively.
+
+We now sketch the derivation of the algorithm.
+The base case of the algorithm is the Leaf node of the \limdd, representing the number $1$, which has stabilizer group $\{1\}$.
+For the recursive case, we wish to compute the stabilizer group of a reduced $n$-qubit node $v=\lnode[v]{v_0}{\mathbb I}{\highlim}{v_1}$.
+If $\highlim=0$, then it is straightforward to see that $\lambda P_n \otimes P'\ket{v} = \ket{v}$ implies $P_n \in \{\id[2], Z\}$, and further that $\Aut(\ket{v}) = \langle \{P_n \otimes g \mid g\in G_0, P_n \in \{\id[2], Z\}\} \rangle$, where $G_0$ is a stabilizer generator set for $v_0$.
+
+If $\highlim \neq 0$, then we expand the stabilizer equation $\lambda P \ket{v} = \ket{v}$:
+\[
+\lambda P_n \otimes P' \left(\ket 0 \otimes\ket{v_0} + \ket 1 \otimes \highlim \ket{v_1} \right)  = \ket 0 \otimes\ket{v_0} +  \ket 1 \otimes \highlim \ket{v_1}, \text{which implies:}
+\]
+%&&& \nonumber\\
+\begin{align}
+  \lambda P' \ket{v_0} =  \ket{v_0}  ~&\land~ z \lambda P' \highlim \ket{v_1} = \highlim \ket{v_1}
+            & \textbf{for } P_n= \diag z,z\in\set{1,-1} \label{eq:diag} \\
+  y^* \lambda P' \highlim \ket{v_1} =  \ket{v_0}  ~ &\land~ \lambda P' \ket{v_0} = y^*\highlim \ket{v_1}
+             & \textbf{for } P_n= \yy, y\in\set{1,i} 
+             \label{eq:anti}
+\end{align}
+The stabilizers can therefore be computed according to \autoref{eq:diag} and \ref{eq:anti} as follows.
+%Here we have to make case distinctions because (unfortunately) LIM selection relies on the other reduction rules.
+\begin{align}     
+    \nonumber
+    \Aut(\ket{v}) =
+    \bigcup_{\hspace{-8mm}z = \in\set{1,-1} , y \in\set{1, i}\hspace{-8mm}}&
+          \diag z \otimes ( \Aut(\ket{v_0}) \cap z\cdot \Aut(\highlim\ket{v_1}) )
+          \\
+          &
+ \cup 
+          \
+    \ww \otimes  
+    \big(
+    \Iso( y^* \highlim\ket{v_1}, \ket{v_0})  \cap \Iso( \ket{v_0}, y^* \highlim\ket{v_1})  
+    \big) 
+    \label{eq:aut-a}
+\end{align}
+where $\Iso(v, w)$ denotes the set of Pauli isomorphisms $A$ which map $\ket{v}$ to $\ket{w}$ and we have denoted $\pi \cdot G := \{\pi \cdot g \mid g \in G\}$ for a set $G$ and a single operator $\pi$.
+\autoref{lemma:isomorphism-set-characterization} shows that such an isomorphism set can be expressed in terms of the stabilizer group of $\ket{v}$.
+%Such isomorphism sets are precisely the stabilizers of $v$, seeded with a single isomorphism $v \rightarrow w$
+%as \autoref{lemma:isomorphism-set-characterization} shows.
+
+\def\Pauli{\textnormal{\textsc{Pauli}}}
+\begin{lemma}
+    \label{lemma:isomorphism-set-characterization}
+    Let $\ket{\phi}$ and $\ket{\psi}$ be quantum states on the same number of qubits.
+    Let $\pi$ be a Pauli isomorphism mapping $\ket{\phi}$ to $\ket{\psi}$.
+    Then the set of Pauli isomorphisms mapping $\ket{\phi}$ to $\ket{\psi}$ is
+    $\Iso(\ket{v},\ket{w})=\pi \cdot \Aut(\ket{\phi})$.
+    That is, the set of isomorphisms $\ket{\phi} \rightarrow \ket{\psi}$ is a coset of the stabilizer subgroup of $\ket{\phi}$.
+\end{lemma}
+\begin{proof}
+    If $P\in \Aut(\ket{\phi})$, then $\pi \cdot P$ is an isomorphism since $\pi \cdot P \ket{\phi} = \pi \ket{\phi} = \ket{\psi}$.
+    Conversely, if $\sigma$ is a Pauli isomorphism which maps $\ket{\phi}$ to $\ket{\psi}$, then $ \pi^{-1} \sigma \in \Aut(\ket{\phi})$ because $\pi^{-1} \sigma \ket{\phi} = \pi^{-1} \ket{\psi} = \ket{\phi}$.
+    Therefore $\sigma=\pi(\pi^{-1}\sigma)\in \pi \cdot \Aut(\ket{\phi})$.
+\end{proof}
+With \autoref{lemma:isomorphism-set-characterization} we can rewrite eq.~\eqref{eq:aut-a} as
+\begin{align}     
+    \nonumber
+    \Aut(\ket{v}) =& %~=~ \hspace{-.9cm}\hspace{-.5cm}
+          \id[2] \otimes \underbrace{( \Aut(\ket{v_0}) \cap \Aut(\highlim\ket{v_1}) )}_{\textnormal{stabilizer subgroup}} \\
+          & \cup Z \otimes \underbrace{( \id \cdot \Aut(\ket{v_0}) \cap -\id \cdot \Aut(\highlim\ket{v_1}) )}_{\textnormal{isomorphism set}} 
+          \nonumber
+          \\
+          &\cup 
+          \bigcup_{y \in\set{1, i}}
+          \
+    \ww \otimes  \underbrace{
+        \big(
+        \pi
+        \cdot
+        \Aut(y^* \highlim \cdot \ket{v_1})
+        \cap
+        \pi^{-1}
+        \cdot
+        \Aut(\ket{v_0})}_{\textnormal{isomorphism set}}
+        \big)
+    \label{eq:aut-simplified}
+\end{align}
+where $\pi$ denotes a single isomorphism $y^* \highlim\ket{v_1}  \rightarrow \ket{v_0}$.
+
+
+Given generating sets for $\Aut(v_0)$ and $\Aut(v_1)$, evaluating eq.~\eqref{eq:aut-simplified} requires us to:
+
+\begin{itemize}
+        \setlength\itemsep{1em}
+    \item \textbf{Compute $\Aut(A\ket{w})$ from $\Aut(w)$ (as generating sets) for Pauli LIM $A$ and node $w$.} It is straightforward to check that $\{A g A^{\dagger} \mid g \in G\}$, with $\langle G \rangle = \Aut(w)$, is a generating set for $\Aut(A\ket{w})$.
+    \item \textbf{Find a single isomorphism between two edges, pointing to reduced nodes.} In a reduced \limdd, edges represent isomorphic states if and only if they point to the same nodes. This results in a straightforward algorithm, see \autoref{alg:getsingleisomorphism}.
+    \item \textbf{Find the intersection of two stabilizer subgroups, represented as generating sets $G_0$ and $G_1$ (\autoref{alg:intersectstabilizergroups}).} 
+        First, it is straightforward to show that the intersection of two stabilizer subgroups is again a stabilizer subgroup (it is never empty since $\id$ is a stabilizer of all states).
+        \autoref{alg:intersectstabilizergroups} will find a generating set $G_U$ for the conjugated intersection of $\langle UG_0 U^{\dagger} \rangle \cap \langle U G_1 U^{\dagger} \rangle$ for a suitably chosen $U$, followed by returning $U^{\dagger} G_U U$ as a generating set for the target intersection $\langle G_0 \rangle \cap \langle G_1 \rangle$.
+        As unitary $U$, we choose an $n$-qubit unitary $U$ which maps $G_0$ to the generating set
+        % todo this should be UG_1U^\dagger
+        \[
+            UG_0 U^{\dagger} = \{Z_1, Z_2, \dots, Z_{|G_0|}\}
+        \]
+        where $Z_k$ denotes a $Z$ gate on qubit with index $k$, i.e., 
+        \[
+            Z_k := \id \otimes \id \otimes \dots \otimes \id \otimes \underbrace{Z}_{\mathclap{\textnormal{position k}}} \otimes \id \otimes \dots \otimes \id.
+        \]
+        Such a unitary always exists and can be found in time $O(n^3)$ using Algorithm 2 from \cite{garcia2012efficient}.
+        It is not hard to see that the Pauli string of all LIMs in $\langle U G_0 U^{\dagger}\rangle$ is a $Z$ or $\id$.
+        Therefore, to find the intersection of this group with $\langle UG_1 U^{\dagger}\rangle$, we only need to bring $U G_1 U^{\dagger}$ into RREF form (see \autoref{sec:preliminaries}), followed by discarding all generators in the RREF form whose pivot corresponds to an $X$ or an $Y$, i.e. its pivot is a $1$ in the X-block when representing a generator as a check vector (see \autoref{sec:preliminaries}).
+        Both the resulting generator set (called $H_1$ in \autoref{alg:intersectstabilizergroups}) and $U G_0 U^{\dagger}$ are subsets of the group of Pauli LIMs with scalars $\pm 1$ and Pauli strings with only $\id$ and $Z$.
+        These groups are finite and abelian.
+        We use the Zassenhaus algorithm \cite{LUKS1997335} to find a generating set $H'$ for the intersection of $\braket{H_1}\cap \braket{UG_0 U^{\dagger}}$ (in particular, the groups $\braket{H_1}$ and $\braket{UG_0U^\dagger}$ are group isomorphic to Boolean vector spaces, where addition corresponds to XOR-ing. Hence we may think of $H_1$ and $UG_0 U^{\dagger}$ as bases of linear subspaces. The Zassenhaus algorithm computes a basis for the intersection of the two linear subspaces.)
+        The final step is to perform the inverse conjugation map and return $U^{\dagger} H' U$.
+        All of the above steps can be performed in $O(n^3)$ time; in particular, the operator $U$ as found by Algorithm 2 from \cite{garcia2012efficient} consists of at most $O(n^2)$ Cliffords, each of which can be applied to a check matrix in time $O(n)$, yielding $O(n^3)$ time required for evaluating $G \mapsto U G U^{\dagger}$.
+        Hence the overall runtime of \autoref{alg:intersectstabilizergroups} is $O(n^3)$ also.
+    \item \findisomorphismsetintersection: \textbf{Find the intersection of two isomorphism sets, represented as single isomorphism ($\pi_0, \pi_1$) with a generator set of a stabilizer subgroup ($G_0, G_1$), see \autoref{lemma:isomorphism-set-characterization}.} 
+        This is the \emph{coset intersection problem} for the $\paulilim_n$ group.
+        Isomorphism sets are coset of stabilizer groups (see \autoref{lemma:isomorphism-set-characterization}) and it is not hard to see that that the intersection of two cosets, given as isomorphisms $\pi_{0/1}$ and generator sets $G_{0/1}$, is either empty, or a coset of $\langle G_0 \rangle \cap \langle G_1 \rangle$ (computed using \autoref{alg:intersectstabilizergroups}).
+        Therefore, we only need to determine an isomorphism $\pi \in \pi_0 \langle G_0\rangle \cap \pi_1 \langle G_1 \rangle$, or infer that no such isomorphism exists.
+
+        We solve this problem in $O(n^3)$ time in two steps (see \autoref{alg:findisointersection} for the full algorithm).
+First, we note that that $\pi_0 \langle G_0 \rangle \cap \pi_1 \langle G_1 \rangle = \pi_0 [\langle G_0 \rangle \cap (\pi_0^{-1} \pi_1) \langle G_1 \rangle]$, so we only need to find an element of the coset $S:= \langle G_0 \rangle \cap (\pi_0^{-1} \pi_1) \langle G_1 \rangle$.
+        Now note that $S$ is nonempty if and only if there exists $g_0 \in \langle G_0 \rangle, g_1 \in \langle G_1 \rangle$ such that $g_0 = \pi_0^{-1} \pi_1 g_1$, or, equivalently, $\pi_0^{-1} \pi_1 \cdot g_1 \cdot g_0^{-1} = \id$.
+        We show in \autoref{lemma:id-smallest-in-coset} that such $g_0, g_1$ exist if and only if $\id$ is the smallest element in the set $S\pi_0^{-1}\pi_1\braket{G_1}\cdot\braket{G_0}$.
+        Hence, for finding out if $S$ is empty we may invoke the \textsc{LexMin} algorithm we have already used before in \textsc{GetLabels} and we will explain below in \autoref{sec:lexmin}.
+        If it is not empty, then we obtain $g_0, g_1$ as above using \textsc{ArgLexMin}, and output $\pi_0 \cdot g_0$ as an element in the intersection.
+        Since \textsc{Lexmin} and \textsc{ArgLexMin} take $O(n^3)$ time, so does \autoref{alg:findisointersection}.
+\end{itemize}
+
+\begin{lemma}
+    \label{lemma:id-smallest-in-coset}
+    The coset $S:= \langle G_0 \rangle \cap \pi_1^{-1}\pi_0 \cdot \langle G_1 \rangle$ is nonemtpy if and only if the lexicographically smallest element of the set $S=\pi_0^{-1}\pi_1\braket{G_1}\cdot\braket{G_0}=\{\pi_0^{-1}\pi_1g_1g_0|g_0\in G_0,g_1\in G_1\}$ is $1 \cdot \id$.
+%    If indeed $S \neq \emptyset$, i.e. there exist $g_0 \in \langle G_0\rangle, g_1 \in \langle G_1 \rangle$ such that $1\cdot \id = \pi_0 \cdot g_0
+%    contains $\lambda \unit$ is an element of a coset $\pi \cdot \Aut(v)$ for some isomorphism $\pi$ and node $v$
+\end{lemma}
+\begin{proof}
+	(Direction $\rightarrow$)
+	Suppose that the set $\braket{G_0}\cap \pi_0^{-1}\pi_1\braket{G_1}$ has an element $a$.
+	Then $a=g_0=\pi_0^{-1}\pi_1g_1$ for some $g_0\in \braket{G_0},g_1\in\braket{G_1}$.
+	We see that $\mathbb I=\pi_0^{-1}\pi_1g_1g_0^{-1}\in \pi_0^{-1}\pi_1\braket{G_1}\cdot \braket{G_0}$, i.e., $\mathbb I\in S$.
+	Note that $\mathbb I$ is, in particular, the lexicographically smallest element, since its check vector is the all-zero vector $(\vec 0|\vec 0|00)$.
+	
+	(Direction $\leftarrow$)
+	Suppose that $\mathbb I\in \pi_0^{-1}\pi_1\braket{G_1}\cdot\braket{G_0}$.
+	Then $\mathbb I=\pi_0^{-1}\pi_1g_1g_0$, for some $g_0\in \braket{G_0},g_1\in\braket{G_1}$, so we get $g_0^{-1}=\pi_0^{-1}\pi_1g_1\in \braket{G_0}\cap \pi_0^{-1}\pi_1\braket{G_1}$, as promised.
+\end{proof}
+
+The four algorithms above allow us to evaluate each of the four individual terms in eq.~\eqref{eq:aut-simplified}.
+To finish the evaluation of eq.~\eqref{eq:aut-simplified}, one would expect that it is also necessary that we find the union of isomorphism sets.
+However, we note that if $\pi G$ is an isomorphism set, with $\pi$ an isomorphism and $G$ an stabilizer subgroup, then $P_n \otimes (\pi g) = (P_n \otimes \pi) (\id[2] \otimes g)$ for all $g\in G$.
+Therefore, we will evaluate eq.~\eqref{eq:aut-simplified}, i.e. find (a generating set) for all stabilizers of node $v$ in two steps.
+First, we construct the generating set for the first term, i.e. $\id[2] \otimes ( \Aut(\ket{v_0}) \cap \Aut(\highlim \ket{v_1}) )$, using the algorithms above.
+Next, for each of the other three terms $P_n \otimes (\pi G)$, we add only \textit{a single} stabilizer of the form $P_n \otimes \pi$ for each $P_n \in \{X, Y, Z\}$.
+We give the full algorithm in \autoref{alg:getautomorphisms} and prove its efficiency below.
+
+
+\begin{lemma}[Efficiency of function \getautomorphisms]
+    Let $v$ be an $n$-qubit node.
+    Assume that generator set for the stabilizer subgroups of the children $v_0, v_1$ are known, e.g. by an earlier call to \getautomorphisms, followed by caching the result (see \autoref{line:autocache-store} in \autoref{alg:getautomorphisms}).
+   Then \autoref{alg:getautomorphisms} (function \getautomorphisms), applied to $v$, runs in time $O(n^3)$.
+\end{lemma}
+\begin{proof}
+    If $n=1$ then \autoref{alg:getautomorphisms} only evaluates \autoref{line:stabalgo-first}--\ref{line:stabalgo-second}, which run in constant time.
+    For $n>1$, the algorithm performs a constant number of calls to \getsingleisomorphism (which only multiplies two Pauli LIMs and therefore runs in time $O(n)$) and four calls to \findisomorphismsetintersection.
+    Note that the function \findisomorphismsetintersection~from \autoref{alg:findisointersection} invoke $O(n^3)$-runtime external algorithms (the Zassenhaus algorithm \cite{LUKS1997335}, RREF algorithm from \autoref{sec:preliminaries}, and Algorithm 2 from \cite{garcia2012efficient}), making its overall runtime $O(n^3)$ also.
+    Therefore, \getautomorphisms has runtime is $O(n^3)$.
+\end{proof}
+
+
+
+%%% THIS ALGORITHM CAUSES A FLOATS LOST ERROR ----
+
+%
+\begin{algorithm}
+    \caption{Algorithm for constructing the Pauli stabilizer subgroup of a Pauli-\limdd~node}
+    \label{alg:getautomorphisms}
+    \begin{algorithmic}[1]
+        \Procedure{\getautomorphisms}{\Edge $\ledge[e_0]{\unit_2^{\otimes n}}{v_0}, \ledge[e_1]{\highlim}{v_1}$ \textbf{with} $v_0, v_1$ reduced}
+        \If{n=1}
+        \label{line:stabalgo-first}
+        \If{ there exists $P \in \pm 1 \cdot \{X, Y, Z\}$ \textbf{such that} $P \ket v = \ket v$} \Return $P$ \Else \mbox{ } \Return \none
+        \label{line:stabalgo-second}
+        \EndIf
+%        \EndIf
+        \Else       
+        \If{$v \in \autocache[v]$}
+        \Return $\autocache[v]$
+        \EndIf
+         \State $G_0 := \getautomorphisms(v_0)$
+        \If{$\highlim = 0$}
+       	     \State \Return $\set{\mathbb I_2\otimes g , ~ \mathbb Z\otimes g  \mid g\in G_0}$
+             \label{line:stab-fork}
+        \Else
+       	\State $G:= \emptyset$
+        %
+        \Comment Add all automorphisms of the form $\unit_2 \otimes \dots$ :
+        \State $G_1 := \{A_1^{\dagger} g A_1 \mid g \in \getautomorphisms(v_1)\}$
+        \State $(\pi, B):= \findisomorphismsetintersection(( \unit_2^{\otimes n - 1}, G_0), ( \unit_2^{\otimes n - 1}, G_1))$
+        \State $G := G \cup \set{\mathbb I_2\otimes g  \mid g\in B}$
+        %
+        %\State $(\pi, G):= \findisomorphismsetintersection(\getsingleisomorphism(\phi_0,\phi_0), \getsingleisomorphism(\phi_1,-\phi_1))$
+        \State
+%        \For{$x\in \set{0,1}, z\in {-1,1}$}
+        \State $\pi_0, \pi_1 := \unit_2^{\otimes n - 1}, \getsingleisomorphism(e_1,-1 \cdot e_1)$ 
+        \State $(\pi, B):= \findisomorphismsetintersection((\pi_0, G_0), (\pi_1, G_1))$
+         \If{$\pi \neq \text{None}$ }   $G := G \cup \{Z\otimes \pi\}$ 
+     	         \Comment Add stabilizer of form $Z \otimes \dots$
+     	 \EndIf
+        %
+        \State
+        \State $\pi_0, \pi_1 := \getsingleisomorphism(e_0,e_1), \getsingleisomorphism(e_1, e_0))$
+        \State $(\pi, B):= \findisomorphismsetintersection((\pi_0, G_0), (\pi_1, G_1))$
+         \If{$\pi \neq \text{None}$ }   $G := G \cup \{X\otimes \pi\}$ 
+     	         \Comment Add stabilizer of form $X \otimes \dots$
+     	 \EndIf 
+        %
+        \State
+        \State $\pi_0, \pi_1 := \getsingleisomorphism(e_0, -i \cdot e_1), \getsingleisomorphism(-i\cdot e_1, e_0))$
+        \State $(\pi, B):= \findisomorphismsetintersection((\pi_0, G_0), (\pi_1, G_1))$
+         \If{$\pi \neq \text{None}$ }   $G := G \cup \{Y\otimes \pi\}$ 
+     	         \Comment Add stabilizer of form $Y \otimes \dots$
+     	 \EndIf
+        \EndIf
+        %
+        \State $\autocache[v] := G$
+        \label{line:autocache-store}
+		\State \Return $G$
+        \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{Algorithm for constructing a single isomorphism between two Pauli-\limdd~edges, each pointing to canonical nodes.
+    }
+    \label{alg:getsingleisomorphism}
+    \begin{algorithmic}[1]
+        \Procedure{\getsingleisomorphism}{\Edge $\ledge Av$, \Edge $\ledge Bw$ \textbf{with} $v, w$ reduced, \mbox{$A\neq 0 \vee B \neq 0$}}
+        \If{$v = w \land A,B \neq 0 $}
+        \State \Return $B \cdot A^{-1}$
+        \EndIf
+        \State \Return \none
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+
+
+
+
+\begin{algorithm}
+    \caption{
+        \label{alg:intersectstabilizergroups}
+    }
+    \begin{algorithmic}[1]
+        \Procedure{IntersectStabilizerGroups}{stabilizer subgroup generating sets $G_0, G_1$}
+        \Statex \textbf{Output}: a generating set for $\langle G_0 \rangle \cap \langle G_1 \rangle$
+        \State Compute $U$ s.t. $H_0 := U G_0 U^{\dagger} = \{Z_1, Z_2, \dots, Z_{|G_0|}\}$, using Algorithm 2 from \cite{garcia2012efficient}
+        \State $H_1 := U G_1 U^{\dagger}$
+        \State Bring $H_1$ into RREF form
+        \State Discard any generators from $H_1$ whose check vector has a $1$ in the $X$ block as pivot
+        \Comment See also \autoref{sec:preliminaries}
+        \State $H':=$ generating set for $\langle H_0 \rangle \cap \langle H_1 \rangle$
+        \Comment Computed using the Zassenhaus algorithm for finding the intersection of vector subspaces
+        \State \Return $U^{\dagger} H' U$ 
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{$O(n^3)$ algorithm for computing the intersection of two sets of isomorphisms, each given as single isomorphism with a stabilizer subgroup (see \autoref{lemma:isomorphism-set-characterization}).
+    \label{alg:findisointersection}
+    }
+    \begin{algorithmic}[1]
+        \Procedure{IntersectIsomorphismSets}{stabilizer subgroup generating sets $G_0, G_1$ and Pauli-LIMs $\pi_0, \pi_1$}
+        \Statex \textbf{Output}: a Pauli LIM $\pi$ and a stabilizer subgroup generating set $G$ such that $\pi \langle G \rangle = \pi_0 \langle G_0 \rangle \cap \pi_1 \langle G_1 \rangle$
+        \State $\pi := LexMin(G_0, G_1, \pi_1^{-1}\pi_0)$
+        \If{$\pi = \id$}
+        \State $(g_0, g_1) = ArgLexMin(G_0, G_1, \pi_1^{-1}\pi_0)$
+        \State $\pi := \pi_0 \cdot g_0$
+        \State $G := IntersectStabilizerGroups(G_0,G_1)$
+        \State \Return $(\pi, G)$
+        \Else
+        \State \Return \none
+        \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+
+\subsubsection{Efficiently finding a minimal LIM by multiplying with stabilizers}
+\label{sec:lexmin}
+
+Here, we give $O(n^3)$ subroutines solving the following problem: given generators sets $G_0, G_1$ of stabilizer subgroups on $n$ qubits, and an $n$-qubit Pauli LIM $A$, determine $\min_{(g_0, g_1) \in \langle G_0 , G_1 \rangle} A \cdot g_0 \cdot g_1$, and also find the $g_0, g_1$ which minimize the expression.
+We give an algorithm for finding both the minimum (\textsc{LexMin}) and the arguments of the minimum (\textsc{ArgLexMin}) in \autoref{alg:lexmin}.
+The inuition behind the algorithms are the following two steps: first, the lexicographically minimum Pauli LIM \emph{modulo scalar} can easily be determined using the scalar-ignoring DivisionRemainder algorithm from \autoref{sec:preliminaries}.
+Since in the lexicographic ordering, the scalar is least significant (\autoref{sec:preliminaries}), the resulting Pauli LIM has the same Pauli string as the the minimal Pauli LIM \emph{including scalar}.
+We show below in \autoref{thm:pauli-group-means-pm-1} that if the scalar-ignoring minimization results in a Pauli LIM $\lambda P$, then the only other eligible LIM, if it exists, is $-\lambda P$.
+Hence, in the next step, we only need to determine whether such LIM $-\lambda P$ exists and whether $- \lambda < \lambda$; if so, then $-\lambda P$ is the real minimal Pauli LIM $\in \langle G_0 \cup G_1\rangle$.
+
+\begin{lemma}
+	\label{thm:pauli-group-means-pm-1}
+    Let $v_0$ and $v_1$ be \limdd nodes, $R$ a Pauli string and $\nu, \nu' \in \mathbb{C}$.
+    Define $G = \Aut(v_0) \cup \Aut(v_1)$.
+If $\nu R, \nu' R \in \langle G\rangle$, then $\nu = \pm \nu'$.
+\end{lemma}
+\begin{proof}
+    We prove $g \in \langle G \rangle \implies \pm i g \notin \langle G \rangle$, which is equivalent to the statement in the lemma because each product of stabilizers from different stabilizer subgroups has scalar $\pm 1$ or $\pm i$ (follows from the facts that stabilizers hold scalar $\pm 1$ and multiplying Pauli strings yields a scalar $\in \{\pm 1, \pm i\}$).
+    To reach a contradiction, assume there exists a $g\in \langle G \rangle$ for which $\pm i g \in \langle G \rangle$ also.
+    Since Pauli LIMs commute or anticommute, we can decompose both as $g = (-1)^x g_0 g_1$ and $\pm i g = (-1)^y h_0 h_1$ for some $x, y \in \{0, 1\}$ and $g_0, h_0\in \Aut(v_0)$ and $g_1, h_1 \in \Aut(v_1)$.
+    Combining yields $\pm i (-1)^x g_0 g_1 = (-1)^y h_0 h_1$, which we rewrite as $\pm i (-1)^{x+y} \underbrace{g_1 h_1^{-1}}_{\in \Aut(v_1)} = \underbrace{g_0^{-1} h_0}_{\in \Aut(v_0)}$. 
+    Squaring both sides yields the contradiction $-1 \cdot \id = \id$ where we used that $(g_1h_1^{-1})^2=(g_0^{-1}g_0)^2=\mathbb I$, since stabilizers square to $\id$.
+\end{proof}
+
+The central procedure in \autoref{alg:lexmin} is \textsc{ArgLexMin}, which, given a LIM $A$ and sets $G_0,G_1$ which generate stabilizer groups, finds $g_0\in \braket{G_0},g_1\in\braket{G_1}$ such that $A\cdot g_0\cdot g_1$ reaches its lexicographic minimum over all choices of $g_0,g_1$.
+It first performs the scalar-ignoring minimization (\autoref{line:division-remainder}) to find $g_0,g_1$ modulo scalar.
+The algorithm \textsc{LexMin} simply invokes \textsc{ArgLexMin} to get the arguments $g_0, g_1$ which yield the minimum and uses these to compute the actual minimum.
+
+The subroutine \textsc{FindOpposite} finds an element $g \in G_0$ such that $-g \in G_0$, or infers that no such $g$ exists.
+It does so in a similar fashion as \textsc{IntersectStabilizerGroups} from \autoref{sec:pauli-isomorphism-detection}: by conjugation with a suitably chosen unitary $U$, it maps $G_1$ to $\{Z_1, Z_2, \dots, Z_{|G_1|}\}$.
+Analogously to our explanation of \textsc{IntersectStabilizerGroups}, the group generated by $UG_1 U^{\dagger}$ contains precisely all Pauli LIMs which satisfy the following three properties:
+(i) the scalar is $1$;
+(ii) its Pauli string has an $\id$ or $Z$ at positions $1, 2, \dots, |G_1|$;
+(iii) its Pauli string has an $\id$ at positions $|G_1|+1, \dots, n$.
+Therefore, the target $g$ only exists if there is a LIM in $\langle U G_0 U^{\dagger}\rangle$ which (i') has scalar $-1$ and satisfies properties (ii) and (iii).
+To find such a $g$, we put $UG_0 U^{\dagger}$ in RREF form and check all resulting generators for properties (i'), (ii) and (iii).
+(By definition of RREF, it suffices to check only the generators for this property)
+If a generator $h$ satisfies these properties, we return $U^{\dagger} h U$ and $\none$ otherwise.
+The algorithm requires $O(n^3)$ time to find $U$, the conversion $G \mapsto UGU^{\dagger}$ can be done in time $O(n^3)$, and $O(n)$ time is required for checking each of the $O(n^2)$ generators.
+Hence the runtime of the overall algorithm is $O(n^3)$.
+
+
+
+\begin{algorithm}
+    \caption{
+        Algorithms \textsc{LexMin} and \textsc{ArgLexMin} for computing the minimal element from the set $A \cdot \langle G_0\rangle \cdot \langle G_1\rangle=\{Ag_0g_1|g_0\in G_0,g_1\in G_1\}$, where $A$ is a Pauli LIM and $G_0, G_1$ are generating sets for stabilizer subgroups.
+        The algorithms make use of a subroutine \textsc{FindOpposite} for finding an element $g \in \langle G_0\rangle$ such that $-g \in \langle G_1\rangle$.
+        A canonical choice for the \textsc{Rootlabel} (see \autoref{sec:simulation}) of an edge $e$ pointing to a node $v$ is $\textsc{LexMin}(G, \{\id\}, \lbl(e))$ where $G$ is a stabilizer generator group of $\Aut(v)$.
+        \label{alg:lexmin}
+    }
+    \begin{algorithmic}[1]
+        \Procedure{LexMin}{stabilizer subgroup generating sets $G_0, G_1$ and Pauli LIM $A$}
+        \Statex \textbf{Output}: $\min_{(g_0, g_1 \in  \langle G_0 \cup G_1 \rangle} A \cdot g_0 \cdot g_1$
+        \State $(g_0, g_1) := \textsc{ArgLexMin}(G_0, G_1, A)$
+        \State \Return $A \cdot g_0 \cdot g_1$
+        \EndProcedure
+        \Statex 
+        %
+        \Procedure{ArgLexMin}{stabilizer subgroup generating sets $G_0, G_1$ and Pauli LIM $A$}
+        \Statex \textbf{Output}: $\argmin_{g_0 \in G_0, g_1\in G_1} A \cdot g_0 \cdot g_1$
+        \State $(g_0, g_1) := \displaystyle \argmin_{(g_0, g_1) \in \langle G_0 \cup G_1 \rangle} \{h \mid h \propto A \cdot g_0 \cdot g_1\}$
+        \Comment Using the scalar-ignoring DivisionRemainder algorithm from \autoref{sec:preliminaries}, 
+        \label{line:division-remainder}
+        \State $g' := \textsc{FindOpposite}(G_0, G_1, g_0, g_1)$
+        \If{$g'$ is $\none$}
+        \State \Return $(g_0, g_1)$
+        \Else
+        \State $h_0, h_1 := g_0 \cdot g', (-g') \cdot g_1$
+        \Comment $g_0 g_1 = - h_0 h_1$
+        \If{$A\cdot h_0 \cdot h_1 <_{\text{lex}} A \cdot g_0 \cdot g_1$} \Return $(h_0,h_1)$
+        \label{line:choose-smaller}
+        \Else \ \Return $(g_0,g_1)$
+        \EndIf
+%        \State \Return $(h_0, h_1)$ \textbf{if} $B\cdot h_0 \cdot h_1 < B \cdot g_0 \cdot g_1$ \textbf{else} $(g_0, g_1)$
+        \EndIf
+        \EndProcedure
+%
+        \Statex
+        \Procedure{FindOpposite}{stabilizer subgroup generating sets $G_0, G_1$}
+        \Statex \textbf{Output}: $g\in G_0$ such that $-g \in G_1$, or \none~if no such $g$ exists
+        \State Compute $U$ s.t. $U G_1 U^{\dagger} = \{Z_1, Z_2, \dots, Z_{|G_1|}\}$, using Algorithm 2 from \cite{garcia2012efficient}
+        \Comment $Z_j$ is the $Z$ gate applied to qubit with index $j$
+        \State $H_0 := UG_0 U^{\dagger}$
+        \State $H_0^{RREF} := H_0$ in RREF form
+        \For{ $h \in H_0^{RREF}$}
+        \If{$h$ satisfies all three of the following: (i) $h$ has scalar $-1$; the Pauli string of $h$ (ii) contains only $\id$ or $Z$ at positions $1, 2, \dots, |G_1|$, and (iii) only $\id$ at positions $|G_1|+1, \dots, n$}
+        \State \Return $U^{\dagger} h U$
+        \EndIf
+        \EndFor
+        \State \Return \none
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+

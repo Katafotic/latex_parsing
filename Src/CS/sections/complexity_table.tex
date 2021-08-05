@@ -1,0 +1,84 @@
+\begin{table}
+\centering
+ \makebox[\linewidth]{
+    \begin{tabular}{| l | c | c | c | c | c |}
+    \hline
+&
+%representation size
+Stabilizer-
+&
+% hadamard
+Apply Hadamard
+&
+% measuring qubit k
+$Z$-measure
+&
+% CNOT+P+T circuit
+Apply $a$ CNOT/$S$ gates
+\\
+&
+%representation size
+state-size
+&
+% hadamard
+gate
+&
+% measuring qubit k
+arbitr. qubit
+&
+% CNOT+P+T circuit
+and $t$ T gates, then $X$-measure 1st
+\\\hline
+        QMDD\cite{zulehner2018advanced}
+&
+%representation size
+$\Omega(2^n)$
+&
+% hadamard
+$O(2^n)$
+&
+% measuring qubit k
+$O(2^n){}^{\ast}$
+&
+% CNOT+P+T circuit
+        $O((a+t)\cdot 2^n) + O(2^n)$
+\\\hline
+        Extended stabilizer formalism [ref?]
+&
+%representation size
+$\Theta(n^2)$
+&
+% hadamard
+$\Theta(n)$
+&
+% measuring qubit k
+$\Theta(n^2)$
+&
+% CNOT+P+T circuit
+        $O(c^t)$ \textcolor{red}{TODO: fill in $c$}
+\\\hline
+        unitary-DT-LIM-QMDD (this work)
+&
+%representation size
+$\Theta(n^2)$
+&
+% hadamard
+$O(2^n)$ or $O(n^4)^{\ast\ast}$
+&
+% measuring qubit k
+$O(n^2){}^{\ast}$
+&
+% CNOT+P+T circuit
+$O((a+t)\cdot n) + O(2^n)$
+\\\hline
+    \end{tabular}
+}
+	\caption{
+		\label{table:runtimes}
+		Worst-case time complexity of representing a stabilizer state on $n$ qubits and applying circuits to it for various formalisms.
+        The LIM group for the LIM-QMDD is the unitary part of the Dihedral Torus.
+        We use the notation $B$-measurement to denote computing $\Pr(\textnormal{outcome}=1)$ for single-qubit measurements in the basis of operator $B$.
+${}^{\ast}$Assuming the (LIM-)QMDD has not been normalized yet.
+${}^{\ast\ast}$ The polynomial runtime is achieved by converting the LIM-QMDD to the stabilizer formalism, performing the Hadamard gate, and converting back.
+}
+\end{table}
